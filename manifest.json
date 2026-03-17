@@ -1,22 +1,1176 @@
-{
-  "name": "Scores",
-  "short_name": "Jeux",
-  "description": "Tarot, Belote, Dutch, Papayoo",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#f2f2f7",
-  "theme_color": "#FF6B00",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "./icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "./icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Jeux de cartes">
+    <meta name="theme-color" content="#FF6B00">
+    <title>🃏 Jeux de cartes</title>
+    
+    <!-- ICÔNE IPHONE -->
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <!-- LIEN VERS LE MANIFEST -->
+    <link rel="manifest" href="./manifest.json">
+
+    <style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2f7; color: #1c1c1e; min-height: 100vh; padding-bottom: 40px; }
+.screen { display: none; }
+.screen.active { display: block; }
+.nav { background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 14px 20px 12px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(0,0,0,0.08); display: flex; justify-content: space-between; align-items: center; }
+.nav h1 { font-size: 18px; font-weight: 700; }
+.back-btn { background: none; border: none; font-size: 13px; cursor: pointer; font-family: inherit; padding: 4px 0; }
+.container { padding: 16px; max-width: 500px; margin: 0 auto; }
+.main-content { padding-bottom: 80px; }
+.card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.card-title { font-size: 11px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; font-weight: 600; }
+.home-hero { text-align: center; padding: 40px 20px 24px; }
+.home-hero h2 { font-size: 28px; font-weight: 700; margin-top: 12px; }
+.home-hero p { color: #8e8e93; margin-top: 6px; }
+.game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.game-card { background: white; border-radius: 18px; padding: 20px 12px; text-align: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 2.5px solid transparent; transition: transform 0.15s; }
+.game-card:active { transform: scale(0.95); }
+.game-card .gc-emoji { font-size: 42px; display: block; margin-bottom: 8px; }
+.game-card .gc-title { font-size: 17px; font-weight: 700; }
+.game-card .gc-sub { font-size: 11px; color: #8e8e93; margin-top: 3px; }
+.game-card.tarot   { border-color: #FF6B00; } .game-card.tarot   .gc-title { color: #FF6B00; }
+.game-card.belote  { border-color: #007AFF; } .game-card.belote  .gc-title { color: #007AFF; }
+.game-card.dutch   { border-color: #5856D6; } .game-card.dutch   .gc-title { color: #5856D6; }
+.game-card.papayoo { border-color: #FF9500; } .game-card.papayoo .gc-title { color: #FF9500; }
+.resume-section { margin-bottom: 8px; }
+.resume-btn { border-radius: 14px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 10px; cursor: pointer; text-align: left; border: 1.5px solid; background: white; font-family: inherit; }
+.resume-btn .icon { font-size: 24px; }
+.resume-btn .text strong { display: block; font-size: 14px; }
+.resume-btn .text span { font-size: 12px; color: #8e8e93; }
+.resume-btn.tarot   { background:#fff8f3; border-color:#FF6B00; } .resume-btn.tarot   strong { color:#FF6B00; }
+.resume-btn.belote  { background:#f0f6ff; border-color:#007AFF; } .resume-btn.belote  strong { color:#007AFF; }
+.resume-btn.dutch   { background:#f3f3ff; border-color:#5856D6; } .resume-btn.dutch   strong { color:#5856D6; }
+.resume-btn.papayoo { background:#fff8ec; border-color:#FF9500; } .resume-btn.papayoo strong { color:#FF9500; }
+.segmented { display: flex; background: #f2f2f7; border-radius: 10px; padding: 2px; gap: 2px; }
+.segmented button { flex: 1; padding: 8px 4px; border: none; background: transparent; border-radius: 8px; font-size: 13px; font-weight: 500; color: #8e8e93; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.segmented button.active { background: white; color: #1c1c1e; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+.input-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f7; }
+.input-row:last-child { border-bottom: none; }
+.input-row label { font-size: 14px; color: #3c3c43; flex: 1; }
+input[type="text"].nom-input { border: 1px solid #e0e0e0; border-radius: 8px; padding: 6px 10px; font-size: 14px; outline: none; font-family: inherit; width: 100%; margin-left: 8px; }
+input[type="text"].team-input { border: 1px solid #e0e0e0; border-radius: 8px; padding: 6px 10px; font-size: 14px; outline: none; font-family: inherit; width: 130px; text-align: right; }
+.score-input { border: 1px solid #e0e0e0; border-radius: 8px; padding: 6px 10px; font-size: 16px; font-weight: 600; width: 80px; text-align: right; outline: none; font-family: inherit; }
+select { border: 1px solid #e0e0e0; border-radius: 8px; padding: 6px 10px; font-size: 14px; background: white; outline: none; font-family: inherit; color: #1c1c1e; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f7; }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-row .lbl { font-size: 14px; color: #3c3c43; flex: 1; }
+.ios-toggle { position: relative; width: 51px; height: 31px; cursor: pointer; flex-shrink: 0; }
+.ios-toggle input { opacity: 0; width: 0; height: 0; }
+.ios-toggle .slider-t { position: absolute; inset: 0; background: #e0e0e0; border-radius: 31px; transition: 0.2s; }
+.ios-toggle .slider-t::before { content:''; position:absolute; width:27px; height:27px; left:2px; top:2px; background:white; border-radius:50%; transition:0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+.ios-toggle input:checked + .slider-t { background: #34c759; }
+.ios-toggle input:checked + .slider-t.red { background: #ff3b30; }
+.ios-toggle input:checked + .slider-t::before { transform: translateX(20px); }
+.slider-labels { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.slider-labels .att { text-align: left; } .slider-labels .def { text-align: right; }
+.lbl-sm { font-size: 11px; color: #8e8e93; }
+.val-big { font-size: 22px; font-weight: 700; }
+.att .val-big { color: #FF6B00; } .def .val-big { color: #007AFF; }
+input[type="range"] { width: 100%; accent-color: #FF6B00; height: 6px; margin: 8px 0; }
+.result-badge { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; margin-top: 8px; font-size: 13px; font-weight: 600; }
+.result-badge.gagne { background: #e8f5e9; color: #2e7d32; }
+.result-badge.chute { background: #ffebee; color: #c62828; }
+.score-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f7; }
+.score-row:last-child { border-bottom: none; }
+.score-row .sname { font-size: 15px; font-weight: 500; }
+.score-row .sval { font-size: 17px; font-weight: 700; }
+.sval.pos { color: #34c759; } .sval.neg { color: #ff3b30; } .sval.zero { color: #8e8e93; }
+.sval.low { color: #34c759; } .sval.mid { color: #FF9500; } .sval.high { color: #ff3b30; }
+.b-board { display: flex; gap: 12px; margin-bottom: 12px; }
+.b-team { flex: 1; text-align: center; padding: 16px 8px; border-radius: 14px; }
+.b-team.nous { background: #f0f6ff; } .b-team.eux { background: #fff0f0; }
+.b-team .tname { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.b-team.nous .tname { color: #007AFF; } .b-team.eux .tname { color: #ff3b30; }
+.b-team .tscore { font-size: 44px; font-weight: 800; }
+.b-team.nous .tscore { color: #007AFF; } .b-team.eux .tscore { color: #ff3b30; }
+.prime-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f2f2f7; }
+.prime-row:last-child { border-bottom: none; }
+.prime-row .pname { font-size: 13px; min-width: 65px; }
+.toggle-btn { background: #f2f2f7; border: none; border-radius: 8px; padding: 6px 10px; font-size: 16px; cursor: pointer; }
+.toggle-btn.active { background: #ffebee; }
+.total-badge { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 10px; margin-top: 8px; font-size: 13px; font-weight: 600; }
+.total-badge.ok { background: #e8f5e9; color: #2e7d32; }
+.total-badge.nok { background: #fff8e1; color: #f57c00; }
+.gameover-banner { background: linear-gradient(135deg,#ff3b30,#ff6b6b); color: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; text-align: center; }
+.gameover-banner h3 { font-size: 17px; font-weight: 700; }
+.gameover-banner p { font-size: 13px; margin-top: 4px; opacity: 0.9; }
+.hist-row { padding: 10px 0; border-bottom: 1px solid #f2f2f7; }
+.hist-row:last-child { border-bottom: none; }
+.hist-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.hchip { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; color: white; }
+.hc-green { background: rgba(52,199,89,0.85); } .hc-orange { background: rgba(255,149,0,0.85); } .hc-red { background: rgba(255,59,48,0.85); } .hc-gray { background: rgba(142,142,147,0.7); }
+.btn { width: 100%; padding: 15px; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s; margin-bottom: 10px; font-family: inherit; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { background: #c7c7cc !important; cursor: default; transform: none; }
+.btn-tarot   { background: #FF6B00; color: white; }
+.btn-belote  { background: #007AFF; color: white; }
+.btn-dutch   { background: #5856D6; color: white; }
+.btn-papayoo { background: #FF9500; color: white; }
+.btn-green   { background: #34c759; color: white; }
+.btn-red     { background: #ff3b30; color: white; }
+.btn-gray    { background: #f2f2f7; color: #1c1c1e; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-left: 28px; }
+.sugg-chip { border-radius: 20px; padding: 4px 12px; font-size: 12px; cursor: pointer; font-family: inherit; border: 1px solid; }
+canvas { width: 100%; border-radius: 10px; display: block; }
+.tabs { display: flex; background: white; position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid rgba(0,0,0,0.1); padding: 8px 0 20px; z-index: 200; max-width: 100%; }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px; border: none; background: transparent; font-family: inherit; }
+.tab .ti { font-size: 22px; } .tab .tl { font-size: 10px; color: #8e8e93; }
+.tab.at .tl { color: #FF6B00; } .tab.ab .tl { color: #007AFF; } .tab.ad .tl { color: #5856D6; } .tab.ap .tl { color: #FF9500; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-end; }
+.modal-overlay.active { display: flex; }
+.modal { background: white; border-radius: 20px 20px 0 0; padding: 20px; width: 100%; }
+.modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+.modal-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 500; cursor: pointer; margin-bottom: 8px; background: #f2f2f7; font-family: inherit; text-align: left; }
+.modal-btn.danger { color: #ff3b30; }
+.modal-btn.cancel { text-align: center; color: #007AFF; font-weight: 600; }
+.elim-badge { font-size: 11px; background: #ff3b30; color: white; padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
+.win-badge  { font-size: 11px; background: #34c759; color: white; padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
+    </style>
+</head>
+<body>
+
+<!-- ══ ACCUEIL ══ -->
+<div id="screen-home" class="screen active">
+  <div class="container">
+    <div class="home-hero">
+      <img src="./icon-192.png" width="72" height="72" style="border-radius:16px;">
+      <h2>Jeux de cartes</h2>
+      <p>Choisissez votre jeu</p>
+    </div>
+    <div id="home-resumes" class="resume-section" style="display:none"></div>
+    <div class="game-grid">
+      <div class="game-card tarot"   onclick="openGame('tarot')">  <span class="gc-emoji">🎴</span><div class="gc-title">Tarot</div>  <div class="gc-sub">3–5 joueurs</div></div>
+      <div class="game-card belote"  onclick="openGame('belote')"> <span class="gc-emoji">🃏</span><div class="gc-title">Belote</div> <div class="gc-sub">2 équipes</div></div>
+      <div class="game-card dutch"   onclick="openGame('dutch')">  <span class="gc-emoji">🎯</span><div class="gc-title">Dutch</div>  <div class="gc-sub">2–6 joueurs</div></div>
+      <div class="game-card papayoo" onclick="openGame('papayoo')"><span class="gc-emoji">🌺</span><div class="gc-title">Papayoo</div><div class="gc-sub">3–6 joueurs</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAROT SETUP ══ -->
+<div id="screen-tarot-setup" class="screen">
+  <div class="nav"><div><h1>🎴 Tarot</h1><small style="color:#8e8e93">Configuration</small></div><button class="back-btn" style="color:#FF6B00" onclick="goHome()">← Accueil</button></div>
+  <div class="container" style="padding-top:16px">
+    <div id="tr-resume-wrap" style="display:none"><button class="resume-btn tarot" onclick="tResume()"><span class="icon">🔄</span><span class="text"><strong>Reprendre la partie</strong><span>Continuer</span></span></button></div>
+    <div class="card"><div class="card-title">👥 Nombre de joueurs</div><div class="segmented" id="tr-mode"><button onclick="tMode(3)">3</button><button onclick="tMode(4)" class="active">4</button><button onclick="tMode(5)">5</button></div></div>
+    <div class="card"><div class="card-title">✏️ Noms des joueurs</div><div id="tr-noms"></div></div>
+    <button class="btn btn-tarot" id="tr-start-btn" onclick="tStart()" disabled>▶️ Nouvelle partie</button>
+  </div>
+</div>
+
+<!-- ══ TAROT JEU ══ -->
+<div id="screen-tarot-jeu" class="screen">
+  <div class="nav"><h1>🎴 Tarot</h1><button class="back-btn" style="color:#FF6B00" onclick="showScreen('tarot-setup')">⚙️ Config</button></div>
+  <div class="main-content"><div class="container">
+    <div class="card"><div class="card-title">👑 Classement</div><div id="tr-classement"></div></div>
+    <div class="card">
+      <div class="card-title">🎯 Nouvelle donne</div>
+      <div class="input-row"><label>Preneur</label><select id="tr-preneur"></select></div>
+      <div class="input-row" id="tr-part-row" style="display:none"><label>Partenaire</label><select id="tr-partenaire"></select></div>
+      <div class="input-row"><label>Contrat</label><select id="tr-contrat"><option value="1">Petite ×1</option><option value="2">Garde ×2</option><option value="4">Sans ×4</option><option value="6">Contre ×6</option></select></div>
+      <div class="input-row"><label>Bouts</label><select id="tr-bouts" onchange="tUpdateBadge()"><option value="0">0 bout — seuil 56</option><option value="1">1 bout — seuil 51</option><option value="2">2 bouts — seuil 41</option><option value="3">3 bouts — seuil 36</option></select></div>
+      <div style="margin-top:12px">
+        <div class="slider-labels"><div class="att"><div class="lbl-sm">⚔️ Attaque</div><div class="val-big" id="tr-att-val">–</div></div><div class="def"><div class="lbl-sm">🛡 Défense</div><div class="val-big" id="tr-def-val">–</div></div></div>
+        <input type="range" id="tr-slider" min="0" max="91" step="0.5" value="45" oninput="tSlider(this.value)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+          <span style="font-size:12px;color:#8e8e93">Saisie manuelle</span>
+          <input type="number" id="tr-pts-manual" min="0" max="91" placeholder="0–91" oninput="tManual(this.value)" style="width:70px;border:1px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:14px;text-align:right;font-family:inherit;outline:none">
+        </div>
+        <div id="tr-badge" style="display:none" class="result-badge"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">💎 Primes</div>
+      <div class="input-row"><label>🚩 Petit au bout</label><select id="tr-pab"><option value="-1">Personne</option></select></div>
+      <div class="input-row"><label>✨ Chelem</label><select id="tr-chelem"><option value="0">Aucun</option><option value="1">Annoncé réussi (+400)</option><option value="2">Non annoncé (+200)</option><option value="3">Annoncé chuté (−200)</option></select></div>
+      <div style="margin-top:10px"><div style="font-size:12px;color:#8e8e93;margin-bottom:8px">Poignées</div><div id="tr-poignees"></div></div>
+      <div style="margin-top:10px"><div style="font-size:12px;color:#8e8e93;margin-bottom:8px">Misères (💀 = +10pts)</div><div id="tr-miseres"></div></div>
+    </div>
+    <button class="btn btn-green" id="tr-valider" onclick="tValider()">✅ Ajouter la donne</button>
+  </div></div>
+  <div class="tabs">
+    <button class="tab at" onclick="tTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button>
+    <button class="tab"    onclick="tTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button>
+    <button class="tab"    onclick="tTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button>
+    <button class="tab"    onclick="tTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button>
+  </div>
+</div>
+
+<!-- ══ TAROT HISTORIQUE ══ -->
+<div id="screen-tarot-hist" class="screen">
+  <div class="nav"><h1>📜 Historique Tarot</h1><button class="back-btn" style="color:#FF6B00" onclick="tTab('jeu')">← Retour</button></div>
+  <div class="main-content container"><div class="card" id="tr-hist-list"></div></div>
+  <div class="tabs"><button class="tab" onclick="tTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab at" onclick="tTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab" onclick="tTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button><button class="tab" onclick="tTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ TAROT STATS ══ -->
+<div id="screen-tarot-stats" class="screen">
+  <div class="nav"><h1>📊 Stats Tarot</h1><button class="back-btn" style="color:#FF6B00" onclick="tTab('jeu')">← Retour</button></div>
+  <div class="main-content container">
+    <div class="card"><div class="card-title">📈 Évolution des scores</div><canvas id="tr-graph" height="200"></canvas></div>
+    <div class="card"><div class="card-title">🏆 Bilan joueurs</div><div id="tr-bilan"></div></div>
+  </div>
+  <div class="tabs"><button class="tab" onclick="tTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab" onclick="tTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab at" onclick="tTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button><button class="tab" onclick="tTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ TAROT OPTIONS ══ -->
+<div id="screen-tarot-opts" class="screen">
+  <div class="nav"><h1>⚙️ Options Tarot</h1><button class="back-btn" style="color:#FF6B00" onclick="tTab('jeu')">← Retour</button></div>
+  <div class="main-content container">
+    <div class="card"><div class="card-title">Calcul</div>
+      <div class="toggle-row"><span class="lbl">Pousse ×1.5</span><label class="ios-toggle"><input type="checkbox" id="tr-opt-pousse"><span class="slider-t"></span></label></div>
+    </div>
+    <div class="card"><div class="card-title">Partie</div>
+      <button class="btn btn-red"  onclick="confirmReset('tarot')">🔄 Remettre à zéro</button>
+      <button class="btn btn-gray" onclick="showScreen('tarot-setup')">➕ Nouvelle partie</button>
+    </div>
+  </div>
+  <div class="tabs"><button class="tab" onclick="tTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab" onclick="tTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab" onclick="tTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button><button class="tab at" onclick="tTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ BELOTE SETUP ══ -->
+<div id="screen-belote-setup" class="screen">
+  <div class="nav"><div><h1>🃏 Belote</h1><small style="color:#8e8e93">Configuration</small></div><button class="back-btn" style="color:#007AFF" onclick="goHome()">← Accueil</button></div>
+  <div class="container" style="padding-top:16px">
+    <div id="bl-resume-wrap" style="display:none"><button class="resume-btn belote" onclick="bResume()"><span class="icon">🔄</span><span class="text"><strong>Reprendre la partie</strong><span>Continuer</span></span></button></div>
+    <div class="card"><div class="card-title">✏️ Noms des équipes</div>
+      <div class="input-row"><label>🔵 Équipe 1</label><input type="text" class="team-input" id="bl-nom1" value="NOUS"></div>
+      <div class="input-row"><label>🔴 Équipe 2</label><input type="text" class="team-input" id="bl-nom2" value="EUX"></div>
+    </div>
+    <button class="btn btn-belote" onclick="bStart()">▶️ Nouvelle partie</button>
+  </div>
+</div>
+
+<!-- ══ BELOTE JEU ══ -->
+<div id="screen-belote-jeu" class="screen">
+  <div class="nav"><h1>🃏 Belote</h1><button class="back-btn" style="color:#007AFF" onclick="showScreen('belote-setup')">⚙️ Config</button></div>
+  <div class="main-content"><div class="container">
+    <div class="b-board">
+      <div class="b-team nous"><div class="tname" id="bl-n1">NOUS</div><div class="tscore" id="bl-s1">0</div></div>
+      <div class="b-team eux"> <div class="tname" id="bl-n2">EUX</div> <div class="tscore" id="bl-s2">0</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 Nouvelle donne</div>
+      <div class="input-row"><label>Preneur</label>
+        <div class="segmented" style="width:200px">
+          <button class="active" id="bl-pb1" onclick="bSetPre(0)">NOUS</button>
+          <button id="bl-pb2" onclick="bSetPre(1)">EUX</button>
+        </div>
+      </div>
+      <div class="toggle-row"><span class="lbl">💀 Chute (Dedans)</span><label class="ios-toggle"><input type="checkbox" id="bl-dedans" onchange="bToggleDedans()"><span class="slider-t red"></span></label></div>
+      <div id="bl-pts-wrap">
+        <div class="input-row"><label>Points réalisés (/ 160)</label><input type="number" class="score-input" id="bl-pts" min="0" max="160" placeholder="ex: 90" oninput="bCheck()"></div>
+        <div class="toggle-row"><span class="lbl">🏆 Capot (toutes les levées)</span><label class="ios-toggle"><input type="checkbox" id="bl-capot" onchange="bCheck()"><span class="slider-t"></span></label></div>
+      </div>
+      <div style="margin-top:8px"><div class="card-title">Belote / Rebelote (+20 pts)</div>
+        <div class="toggle-row"><span class="lbl">Belote équipe preneuse</span><label class="ios-toggle"><input type="checkbox" id="bl-bp"><span class="slider-t"></span></label></div>
+        <div class="toggle-row"><span class="lbl">Belote équipe défense</span><label class="ios-toggle"><input type="checkbox" id="bl-bd"><span class="slider-t"></span></label></div>
+      </div>
+    </div>
+    <button class="btn btn-green" id="bl-valider" onclick="bValider()" disabled>✅ Ajouter la manche</button>
+  </div></div>
+  <div class="tabs">
+    <button class="tab ab" onclick="bTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button>
+    <button class="tab"    onclick="bTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button>
+    <button class="tab"    onclick="bTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button>
+  </div>
+</div>
+
+<!-- ══ BELOTE HISTORIQUE ══ -->
+<div id="screen-belote-hist" class="screen">
+  <div class="nav"><h1>📜 Historique Belote</h1><button class="back-btn" style="color:#007AFF" onclick="bTab('jeu')">← Retour</button></div>
+  <div class="main-content container"><div class="card" id="bl-hist-list"></div></div>
+  <div class="tabs"><button class="tab" onclick="bTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab ab" onclick="bTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab" onclick="bTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ BELOTE OPTIONS ══ -->
+<div id="screen-belote-opts" class="screen">
+  <div class="nav"><h1>⚙️ Options Belote</h1><button class="back-btn" style="color:#007AFF" onclick="bTab('jeu')">← Retour</button></div>
+  <div class="main-content container">
+    <div class="card"><div class="card-title">Partie</div>
+      <button class="btn btn-red"  onclick="confirmReset('belote')">🔄 Remettre à zéro</button>
+      <button class="btn btn-gray" onclick="showScreen('belote-setup')">➕ Nouvelle partie</button>
+    </div>
+  </div>
+  <div class="tabs"><button class="tab" onclick="bTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab" onclick="bTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab ab" onclick="bTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ DUTCH SETUP ══ -->
+<div id="screen-dutch-setup" class="screen">
+  <div class="nav"><div><h1>🎯 Dutch</h1><small style="color:#8e8e93">Configuration</small></div><button class="back-btn" style="color:#5856D6" onclick="goHome()">← Accueil</button></div>
+  <div class="container" style="padding-top:16px">
+    <div id="du-resume-wrap" style="display:none"><button class="resume-btn dutch" onclick="dResume()"><span class="icon">🔄</span><span class="text"><strong>Reprendre la partie</strong><span>Continuer</span></span></button></div>
+    <div class="card"><div class="card-title">👥 Nombre de joueurs</div><div class="segmented" id="du-mode"><button onclick="dMode(2)">2</button><button onclick="dMode(3)">3</button><button onclick="dMode(4)" class="active">4</button><button onclick="dMode(5)">5</button><button onclick="dMode(6)">6</button></div></div>
+    <div class="card"><div class="card-title">✏️ Noms des joueurs</div><div id="du-noms"></div></div>
+    <div class="card"><div class="card-title">⚙️ Limite de points</div>
+      <div class="input-row"><label>Fin de partie à</label><div style="display:flex;align-items:center;gap:6px"><input type="number" id="du-limite" value="100" min="50" max="500" style="width:70px;border:1px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:14px;text-align:right;font-family:inherit;outline:none"><span style="color:#8e8e93;font-size:13px">pts</span></div></div>
+    </div>
+    <button class="btn btn-dutch" id="du-start-btn" onclick="dStart()" disabled>▶️ Nouvelle partie</button>
+  </div>
+</div>
+
+<!-- ══ DUTCH JEU ══ -->
+<div id="screen-dutch-jeu" class="screen">
+  <div class="nav"><h1>🎯 Dutch</h1><button class="back-btn" style="color:#5856D6" onclick="showScreen('dutch-setup')">⚙️ Config</button></div>
+  <div class="main-content"><div class="container">
+    <div id="du-gameover" style="display:none"></div>
+    <div class="card"><div class="card-title">👑 Classement</div><div id="du-classement"></div></div>
+    <div class="card" id="du-saisie-card">
+      <div class="card-title">🎯 Manche <span id="du-manche-n">1</span></div>
+      <div id="du-score-inputs"></div>
+    </div>
+    <button class="btn btn-green" id="du-valider" onclick="dValider()" disabled>✅ Valider la manche</button>
+  </div></div>
+  <div class="tabs">
+    <button class="tab ad" onclick="dTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button>
+    <button class="tab"    onclick="dTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button>
+    <button class="tab"    onclick="dTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button>
+    <button class="tab"    onclick="dTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button>
+  </div>
+</div>
+
+<!-- ══ DUTCH HISTORIQUE ══ -->
+<div id="screen-dutch-hist" class="screen">
+  <div class="nav"><h1>📜 Historique Dutch</h1><button class="back-btn" style="color:#5856D6" onclick="dTab('jeu')">← Retour</button></div>
+  <div class="main-content container"><div class="card" id="du-hist-list"></div></div>
+  <div class="tabs"><button class="tab" onclick="dTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab ad" onclick="dTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab" onclick="dTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button><button class="tab" onclick="dTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ DUTCH STATS ══ -->
+<div id="screen-dutch-stats" class="screen">
+  <div class="nav"><h1>📊 Stats Dutch</h1><button class="back-btn" style="color:#5856D6" onclick="dTab('jeu')">← Retour</button></div>
+  <div class="main-content container">
+    <div class="card"><div class="card-title">📈 Évolution des scores</div><canvas id="du-graph" height="200"></canvas></div>
+    <div class="card"><div class="card-title">🏆 Bilan joueurs</div><div id="du-bilan"></div></div>
+  </div>
+  <div class="tabs"><button class="tab" onclick="dTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab" onclick="dTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab ad" onclick="dTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button><button class="tab" onclick="dTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ DUTCH OPTIONS ══ -->
+<div id="screen-dutch-opts" class="screen">
+  <div class="nav"><h1>⚙️ Options Dutch</h1><button class="back-btn" style="color:#5856D6" onclick="dTab('jeu')">← Retour</button></div>
+  <div class="main-content container">
+    <div class="card"><div class="card-title">Partie</div>
+      <button class="btn btn-red"  onclick="confirmReset('dutch')">🔄 Remettre à zéro</button>
+      <button class="btn btn-gray" onclick="showScreen('dutch-setup')">➕ Nouvelle partie</button>
+    </div>
+  </div>
+  <div class="tabs"><button class="tab" onclick="dTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab" onclick="dTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab" onclick="dTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button><button class="tab ad" onclick="dTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ PAPAYOO SETUP ══ -->
+<div id="screen-papayoo-setup" class="screen">
+  <div class="nav"><div><h1>🌺 Papayoo</h1><small style="color:#8e8e93">Configuration</small></div><button class="back-btn" style="color:#FF9500" onclick="goHome()">← Accueil</button></div>
+  <div class="container" style="padding-top:16px">
+    <div id="pa-resume-wrap" style="display:none"><button class="resume-btn papayoo" onclick="pResume()"><span class="icon">🔄</span><span class="text"><strong>Reprendre la partie</strong><span>Continuer</span></span></button></div>
+    <div class="card"><div class="card-title">👥 Nombre de joueurs</div><div class="segmented" id="pa-mode"><button onclick="pMode(3)">3</button><button onclick="pMode(4)" class="active">4</button><button onclick="pMode(5)">5</button><button onclick="pMode(6)">6</button></div></div>
+    <div class="card"><div class="card-title">✏️ Noms des joueurs</div><div id="pa-noms"></div></div>
+    <button class="btn btn-papayoo" id="pa-start-btn" onclick="pStart()" disabled>▶️ Nouvelle partie</button>
+  </div>
+</div>
+
+<!-- ══ PAPAYOO JEU ══ -->
+<div id="screen-papayoo-jeu" class="screen">
+  <div class="nav"><h1>🌺 Papayoo</h1><button class="back-btn" style="color:#FF9500" onclick="showScreen('papayoo-setup')">⚙️ Config</button></div>
+  <div class="main-content"><div class="container">
+    <div class="card"><div class="card-title">👑 Classement</div><div id="pa-classement"></div></div>
+    <div class="card">
+      <div class="card-title">🌺 Manche <span id="pa-manche-n">1</span></div>
+      <div class="input-row"><label style="font-size:13px">Couleur du Papayoo</label>
+        <select id="pa-couleur"><option value="♥ Cœur">♥ Cœur</option><option value="♦ Carreau">♦ Carreau</option><option value="♠ Pique">♠ Pique</option><option value="♣ Trèfle">♣ Trèfle</option></select>
+      </div>
+      <div style="font-size:12px;color:#8e8e93;margin:8px 0;padding:8px;background:#fff8ec;border-radius:8px">💡 La somme des points de tous les joueurs doit être égale à <strong>250 pts</strong></div>
+      <div id="pa-score-inputs"></div>
+      <div id="pa-total" class="total-badge nok"><span>Total</span><span id="pa-total-val">0 / 250</span></div>
+    </div>
+    <button class="btn btn-green" id="pa-valider" onclick="pValider()" disabled>✅ Valider la manche</button>
+  </div></div>
+  <div class="tabs">
+    <button class="tab ap" onclick="pTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button>
+    <button class="tab"    onclick="pTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button>
+    <button class="tab"    onclick="pTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button>
+    <button class="tab"    onclick="pTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button>
+  </div>
+</div>
+
+<!-- ══ PAPAYOO HISTORIQUE ══ -->
+<div id="screen-papayoo-hist" class="screen">
+  <div class="nav"><h1>📜 Historique Papayoo</h1><button class="back-btn" style="color:#FF9500" onclick="pTab('jeu')">← Retour</button></div>
+  <div class="main-content container"><div class="card" id="pa-hist-list"></div></div>
+  <div class="tabs"><button class="tab" onclick="pTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab ap" onclick="pTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab" onclick="pTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button><button class="tab" onclick="pTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ PAPAYOO STATS ══ -->
+<div id="screen-papayoo-stats" class="screen">
+  <div class="nav"><h1>📊 Stats Papayoo</h1><button class="back-btn" style="color:#FF9500" onclick="pTab('jeu')">← Retour</button></div>
+  <div class="main-content container">
+    <div class="card"><div class="card-title">📈 Évolution des scores</div><canvas id="pa-graph" height="200"></canvas></div>
+    <div class="card"><div class="card-title">🏆 Bilan joueurs</div><div id="pa-bilan"></div></div>
+  </div>
+  <div class="tabs"><button class="tab" onclick="pTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab" onclick="pTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab ap" onclick="pTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button><button class="tab" onclick="pTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- ══ PAPAYOO OPTIONS ══ -->
+<div id="screen-papayoo-opts" class="screen">
+  <div class="nav"><h1>⚙️ Options Papayoo</h1><button class="back-btn" style="color:#FF9500" onclick="pTab('jeu')">← Retour</button></div>
+  <div class="main-content container">
+    <div class="card"><div class="card-title">Partie</div>
+      <button class="btn btn-red"  onclick="confirmReset('papayoo')">🔄 Remettre à zéro</button>
+      <button class="btn btn-gray" onclick="showScreen('papayoo-setup')">➕ Nouvelle partie</button>
+    </div>
+  </div>
+  <div class="tabs"><button class="tab" onclick="pTab('jeu')"><span class="ti">🎯</span><span class="tl">Saisie</span></button><button class="tab" onclick="pTab('hist')"><span class="ti">📜</span><span class="tl">Historique</span></button><button class="tab" onclick="pTab('stats')"><span class="ti">📊</span><span class="tl">Stats</span></button><button class="tab ap" onclick="pTab('opts')"><span class="ti">⚙️</span><span class="tl">Options</span></button></div>
+</div>
+
+<!-- MODAL RESET -->
+<div id="modal-reset" class="modal-overlay" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Remettre à zéro ?</h3>
+    <p style="color:#8e8e93;font-size:14px;margin-bottom:16px">Tous les scores seront effacés.</p>
+    <button class="modal-btn danger" onclick="doReset()">Remettre à zéro</button>
+    <button class="modal-btn cancel" onclick="closeModal()">Annuler</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+const ALL_SCREENS = [
+  'home',
+  'tarot-setup','tarot-jeu','tarot-hist','tarot-stats','tarot-opts',
+  'belote-setup','belote-jeu','belote-hist','belote-opts',
+  'dutch-setup','dutch-jeu','dutch-hist','dutch-stats','dutch-opts',
+  'papayoo-setup','papayoo-jeu','papayoo-hist','papayoo-stats','papayoo-opts'
+];
+const COL = ['#FF6B00','#007AFF','#34c759','#ff3b30','#5856D6','#FF9500','#af52de','#00c7be'];
+
+function showScreen(id) {
+  ALL_SCREENS.forEach(s => {
+    const el = document.getElementById('screen-' + s);
+    if (el) el.classList.remove('active');
+  });
+  const target = document.getElementById('screen-' + id);
+  if (target) target.classList.add('active');
+  window.scrollTo(0, 0);
 }
+
+function goHome() { renderHomeResumes(); showScreen('home'); }
+
+function openGame(game) {
+  if (game === 'tarot')   { tLoad(); showScreen('tarot-setup'); }
+  if (game === 'belote')  { bLoad(); showScreen('belote-setup'); }
+  if (game === 'dutch')   { dLoad(); showScreen('dutch-setup'); }
+  if (game === 'papayoo') { pLoad(); showScreen('papayoo-setup'); }
+}
+
+window.onload = function() { renderHomeResumes(); };
+
+function renderHomeResumes() {
+  const div = document.getElementById('home-resumes');
+  let html = '';
+  if (localStorage.getItem('tarot_save'))   html += `<button class="resume-btn tarot"   onclick="tResume()"><span class="icon">🎴</span><span class="text"><strong>Reprendre Tarot</strong><span>Continuer la partie</span></span></button>`;
+  if (localStorage.getItem('belote_save'))  html += `<button class="resume-btn belote"  onclick="bResume()"><span class="icon">🃏</span><span class="text"><strong>Reprendre Belote</strong><span>Continuer la partie</span></span></button>`;
+  if (localStorage.getItem('dutch_save'))   html += `<button class="resume-btn dutch"   onclick="dResume()"><span class="icon">🎯</span><span class="text"><strong>Reprendre Dutch</strong><span>Continuer la partie</span></span></button>`;
+  if (localStorage.getItem('papayoo_save')) html += `<button class="resume-btn papayoo" onclick="pResume()"><span class="icon">🌺</span><span class="text"><strong>Reprendre Papayoo</strong><span>Continuer la partie</span></span></button>`;
+  div.innerHTML = html;
+  div.style.display = html ? 'block' : 'none';
+}
+
+// ══════════════════════════════════════
+// GRAPHIQUE COMMUN
+// ══════════════════════════════════════
+function drawGraph(canvasId, joueurs, historique, limiteLine) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.offsetWidth - 32 || 340;
+  const H = 200;
+  canvas.width = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  const nb = joueurs.length;
+  const hist = [...historique].reverse();
+  const nM = hist.length;
+
+  const curves = Array(nb).fill(0).map(() => [0]);
+  hist.forEach(m => {
+    m.scores.forEach((s, i) => {
+      if (i < nb) curves[i].push(curves[i][curves[i].length - 1] + s);
+    });
+  });
+
+  const all = curves.flat();
+  const mn = Math.min(...all), mx = Math.max(...all);
+  const rng = mx - mn || 1;
+  const PL = 44, PR = 12, PT = 18, PB = 34;
+  const gW = W - PL - PR, gH = H - PT - PB;
+
+  ctx.clearRect(0, 0, W, H);
+
+  for (let i = 0; i <= 4; i++) {
+    const y = PT + (gH / 4) * i;
+    ctx.strokeStyle = '#ebebeb'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PL, y); ctx.lineTo(PL + gW, y); ctx.stroke();
+    ctx.fillStyle = '#8e8e93'; ctx.font = '10px -apple-system,sans-serif'; ctx.textAlign = 'right';
+    const val = mx - (rng / 4) * i;
+    ctx.fillText(Math.round(val * 10) / 10, PL - 4, y + 4);
+  }
+
+  if (limiteLine != null && limiteLine >= mn && limiteLine <= mx) {
+    const yL = PT + ((mx - limiteLine) / rng) * gH;
+    ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(PL, yL); ctx.lineTo(PL + gW, yL); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ff3b30'; ctx.font = 'bold 10px -apple-system,sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('Limite ' + limiteLine, PL + 2, yL - 3);
+  }
+
+  curves.forEach((pts, i) => {
+    const col = COL[i % COL.length];
+    ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    pts.forEach((v, x) => {
+      const px = PL + (nM > 0 ? (x / nM) * gW : 0);
+      const py = PT + ((mx - v) / rng) * gH;
+      x === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    const lx = PL + (nM > 0 ? ((pts.length - 1) / nM) * gW : 0);
+    const ly = PT + ((mx - pts[pts.length - 1]) / rng) * gH;
+    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+    ctx.fillStyle = col; ctx.fill();
+    const nom = joueurs[i] ? joueurs[i].nom : 'J' + (i + 1);
+    ctx.font = 'bold 11px -apple-system,sans-serif'; ctx.fillStyle = col; ctx.textAlign = 'left';
+    const tw = ctx.measureText(nom).width;
+    ctx.fillText(nom, Math.min(lx + 6, W - PR - tw - 4), ly + (i % 2 === 0 ? -6 : 10));
+  });
+
+  ctx.textAlign = 'left'; ctx.font = '10px -apple-system,sans-serif';
+  let lx = PL;
+  joueurs.forEach((j, i) => {
+    ctx.fillStyle = COL[i % COL.length];
+    ctx.fillRect(lx, H - 12, 10, 8);
+    ctx.fillStyle = '#3c3c43';
+    const nom = j.nom || 'J' + (i + 1);
+    ctx.fillText(nom, lx + 13, H - 5);
+    lx += ctx.measureText(nom).width + 26;
+  });
+}
+
+// ══════════════════════════════════════
+// SUGGESTIONS / NOMS
+// ══════════════════════════════════════
+function getNoms(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
+function saveNoms(key, joueurs) {
+  let saved = getNoms(key);
+  joueurs.forEach(j => { if (j.nom && !saved.includes(j.nom)) saved.push(j.nom); });
+  localStorage.setItem(key, JSON.stringify(saved));
+}
+function makeNomInputs(containerId, n, joueurs, prefix, nomsKey, color) {
+  const c = document.getElementById(containerId); if (!c) return;
+  c.innerHTML = '';
+  const connus = getNoms(nomsKey);
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div'); d.style.marginBottom = '10px';
+    d.innerHTML = `<div style="display:flex;align-items:center">
+      <span style="font-size:11px;font-weight:700;color:#8e8e93;width:22px">J${i+1}</span>
+      <input type="text" class="nom-input" id="${prefix}-nom-${i}" placeholder="Joueur ${i+1}"
+        oninput="updateSugg('${prefix}',${i},'${nomsKey}','${color}',${n})"
+        onfocus="updateSugg('${prefix}',${i},'${nomsKey}','${color}',${n})"
+        autocomplete="off" value="${joueurs[i] ? joueurs[i].nom || '' : ''}">
+    </div>
+    <div id="${prefix}-sugg-${i}" class="suggestions"></div>`;
+    c.appendChild(d);
+  }
+}
+function updateSugg(prefix, i, nomsKey, color, n) {
+  const inp = document.getElementById(`${prefix}-nom-${i}`); if (!inp) return;
+  const val = inp.value.toLowerCase();
+  const used = [];
+  for (let j = 0; j < n; j++) { if (j !== i) { const el = document.getElementById(`${prefix}-nom-${j}`); if (el) used.push(el.value.toLowerCase()); } }
+  const filtered = getNoms(nomsKey).filter(nm => (val === '' || nm.toLowerCase().startsWith(val)) && !used.includes(nm.toLowerCase()));
+  const div = document.getElementById(`${prefix}-sugg-${i}`); if (!div) return;
+  div.innerHTML = filtered.map(nm => `<button class="sugg-chip" style="background:${color}18;color:${color};border-color:${color}44" onclick="pickNom('${prefix}',${i},'${nm}',${n})">${nm}</button>`).join('');
+  if (prefix === 'tr') tCheckStart();
+  if (prefix === 'du') dCheckStart();
+  if (prefix === 'pa') pCheckStart();
+}
+function pickNom(prefix, i, nom, n) {
+  const inp = document.getElementById(`${prefix}-nom-${i}`); if (!inp) return;
+  inp.value = nom;
+  const div = document.getElementById(`${prefix}-sugg-${i}`); if (div) div.innerHTML = '';
+  if (prefix === 'tr') tCheckStart();
+  if (prefix === 'du') dCheckStart();
+  if (prefix === 'pa') pCheckStart();
+  if (i < n - 1) { const next = document.getElementById(`${prefix}-nom-${i+1}`); if (next) next.focus(); }
+}
+
+// ══════════════════════════════════════
+// MODAL RESET
+// ══════════════════════════════════════
+let resetTarget = '';
+function confirmReset(game) { resetTarget = game; document.getElementById('modal-reset').classList.add('active'); }
+function closeModal() { document.getElementById('modal-reset').classList.remove('active'); }
+function doReset() {
+  closeModal();
+  if (resetTarget === 'tarot')   tReset();
+  if (resetTarget === 'belote')  bReset();
+  if (resetTarget === 'dutch')   dReset();
+  if (resetTarget === 'papayoo') pReset();
+}
+
+// ══════════════════════════════════════
+// ████  TAROT  ████
+// ══════════════════════════════════════
+let TS = { n:4, joueurs:[], hist:[] };
+let tPoignees = [], tMiseres = [];
+const T_SEUILS = [56, 51, 41, 36];
+const T_POIGNEE_VALS = [[13,15,18],[10,13,15],[8,10,13]]; 
+
+function tSave() { localStorage.setItem('tarot_save', JSON.stringify(TS)); saveNoms('tarot_noms', TS.joueurs.slice(0, TS.n)); }
+function tLoad() {
+  const s = localStorage.getItem('tarot_save');
+  if (s) try { TS = JSON.parse(s); } catch(e) {}
+  document.getElementById('tr-resume-wrap').style.display = s ? 'block' : 'none';
+  tRenderSetup();
+}
+function tRenderSetup() {
+  if (!TS.joueurs.length) TS.joueurs = Array(5).fill(0).map((_,i) => ({nom:'',score:0,nbP:0,nbG:0}));
+  document.querySelectorAll('#tr-mode button').forEach((b,i) => b.classList.toggle('active', i === TS.n - 3));
+  makeNomInputs('tr-noms', TS.n, TS.joueurs, 'tr', 'tarot_noms', '#FF6B00');
+  tCheckStart();
+}
+function tMode(n) { TS.n = n; tRenderSetup(); }
+function tCheckStart() {
+  const ok = Array.from({length:TS.n}, (_,i) => (document.getElementById(`tr-nom-${i}`)?.value||'').trim() !== '').every(Boolean);
+  const btn = document.getElementById('tr-start-btn'); if (btn) btn.disabled = !ok;
+}
+function tStart() {
+  TS.joueurs = Array(TS.n).fill(0).map((_,i) => ({nom:(document.getElementById(`tr-nom-${i}`)?.value||'').trim()||`J${i+1}`,score:0,nbP:0,nbG:0}));
+  TS.hist = []; tSave(); tLaunch();
+}
+function tResume() { tLoad(); tLaunch(); }
+function tLaunch() { showScreen('tarot-jeu'); tInitUI(); tRefreshClass(); }
+
+function tInitUI() {
+  tPoignees = Array(TS.n).fill(0);
+  tMiseres  = Array(TS.n).fill(false);
+
+  ['tr-preneur','tr-partenaire','tr-pab'].forEach(sid => {
+    const sel = document.getElementById(sid); if (!sel) return;
+    sel.innerHTML = sid === 'tr-pab' ? '<option value="-1">Personne</option>' : '';
+    for (let i = 0; i < TS.n; i++) {
+      const o = document.createElement('option'); o.value = i; o.textContent = TS.joueurs[i].nom || `J${i+1}`; sel.appendChild(o);
+    }
+  });
+  document.getElementById('tr-part-row').style.display = TS.n === 5 ? 'flex' : 'none';
+  document.getElementById('tr-slider').value = 45;
+  document.getElementById('tr-pts-manual').value = '';
+  document.getElementById('tr-att-val').textContent = '–';
+  document.getElementById('tr-def-val').textContent = '–';
+  document.getElementById('tr-badge').style.display = 'none';
+  document.getElementById('tr-bouts').selectedIndex = 0;
+  document.getElementById('tr-contrat').selectedIndex = 0;
+  document.getElementById('tr-chelem').selectedIndex = 0;
+  document.getElementById('tr-pab').value = '-1';
+
+  const pgDiv = document.getElementById('tr-poignees'); pgDiv.innerHTML = '';
+  const pgVals = T_POIGNEE_VALS[TS.n - 3] || T_POIGNEE_VALS[1];
+  const pgLabels = ['–', `Simple (${pgVals[0]}+)`, `Double (${pgVals[1]}+)`, `Triple (${pgVals[2]}+)`];
+  TS.joueurs.forEach((j, i) => {
+    const row = document.createElement('div'); row.className = 'prime-row';
+    row.innerHTML = `<span class="pname">${j.nom}</span>
+      <div class="segmented" id="tpg-${i}">${pgLabels.map((l,v)=>`<button onclick="tSetPg(${i},${v})" ${v===0?'class="active"':''}>${l}</button>`).join('')}</div>`;
+    pgDiv.appendChild(row);
+  });
+
+  const msDiv = document.getElementById('tr-miseres'); msDiv.innerHTML = '';
+  TS.joueurs.forEach((j, i) => {
+    const row = document.createElement('div'); row.className = 'prime-row';
+    row.innerHTML = `<span class="pname">${j.nom}</span><button class="toggle-btn" id="tms-${i}" onclick="tToggleMs(${i})">💀 OFF</button>`;
+    msDiv.appendChild(row);
+  });
+}
+
+function tSetPg(i, v) {
+  tPoignees[i] = v;
+  document.querySelectorAll(`#tpg-${i} button`).forEach((b,j) => b.classList.toggle('active', j === v));
+}
+function tToggleMs(i) {
+  tMiseres[i] = !tMiseres[i];
+  const btn = document.getElementById(`tms-${i}`);
+  if (btn) { btn.textContent = tMiseres[i] ? '💀 ON' : '💀 OFF'; btn.classList.toggle('active', tMiseres[i]); }
+}
+
+function tSlider(v) {
+  const f = parseFloat(v);
+  document.getElementById('tr-att-val').textContent = f.toFixed(1);
+  document.getElementById('tr-def-val').textContent = (91 - f).toFixed(1);
+  document.getElementById('tr-pts-manual').value = f;
+  tUpdateBadge(f);
+}
+function tManual(v) {
+  const f = parseFloat(v);
+  if (!isNaN(f) && f >= 0 && f <= 91) {
+    document.getElementById('tr-slider').value = f;
+    document.getElementById('tr-att-val').textContent = f.toFixed(1);
+    document.getElementById('tr-def-val').textContent = (91 - f).toFixed(1);
+    tUpdateBadge(f);
+  }
+}
+function tUpdateBadge(pts) {
+  if (pts === undefined) pts = parseFloat(document.getElementById('tr-pts-manual').value);
+  const b = parseInt(document.getElementById('tr-bouts').value);
+  const s = T_SEUILS[b], d = pts - s;
+  const el = document.getElementById('tr-badge');
+  if (isNaN(pts)) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  if (d >= 0) { el.className = 'result-badge gagne'; el.innerHTML = `✅ Gagné de ${Math.abs(d).toFixed(1)} pts <span style="margin-left:auto;font-size:11px;opacity:0.7">Seuil : ${s}</span>`; }
+  else        { el.className = 'result-badge chute'; el.innerHTML = `❌ Chuté de ${Math.abs(d).toFixed(1)} pts <span style="margin-left:auto;font-size:11px;opacity:0.7">Seuil : ${s}</span>`; }
+}
+
+function tValider() {
+  const pts  = parseFloat(document.getElementById('tr-pts-manual').value);
+  const nb   = parseInt(document.getElementById('tr-bouts').value);
+  const co   = parseInt(document.getElementById('tr-contrat').value);
+  const ch   = parseInt(document.getElementById('tr-chelem').value);
+  const pab  = parseInt(document.getElementById('tr-pab').value);
+  const pi   = parseInt(document.getElementById('tr-preneur').value);
+  const pai  = parseInt(document.getElementById('tr-partenaire').value);
+  if (isNaN(pts)) return;
+
+  const s = T_SEUILS[nb];
+  const diff = Math.abs(pts - s);
+  const gagne = pts >= s;
+  
+  let baseDef = 25 + diff;
+
+  if (pab >= 0) {
+    const isAttaque = (pab === pi || (TS.n === 5 && pab === pai));
+    if ((gagne && isAttaque) || (!gagne && !isAttaque)) {
+      baseDef += 10; 
+    } else {
+      baseDef -= 10;
+    }
+  }
+
+  let pointsDef = baseDef * co;
+  pointsDef = gagne ? -pointsDef : pointsDef;
+
+  const vChelem = [0, 400, 200, -200][ch] || 0;
+  pointsDef += (gagne ? -vChelem : vChelem);
+
+  const gains = Array(TS.n).fill(0);
+  const att = TS.n === 5 && pai !== pi ? [pi, pai] : [pi];
+  const def = Array.from({length: TS.n}, (_, i) => i).filter(i => !att.includes(i));
+  
+  def.forEach(d => gains[d] += pointsDef);
+
+  const totalDef = -pointsDef * def.length;
+  if (att.length === 2) {
+    gains[att[0]] += totalDef * 2 / 3; 
+    gains[att[1]] += totalDef * 1 / 3; 
+  } else {
+    gains[att[0]] += totalDef; 
+  }
+
+  const pgV = [0, 20, 30, 40];
+  for (let i = 0; i < TS.n; i++) {
+    if (tPoignees[i] > 0) {
+      const valPoignee = pgV[tPoignees[i]];
+      const others = Array.from({length: TS.n}, (_, j) => j).filter(j => j !== i);
+      gains[i] += valPoignee * others.length;
+      others.forEach(o => gains[o] -= valPoignee);
+    }
+    if (tMiseres[i]) {
+      const others = Array.from({length: TS.n}, (_, j) => j).filter(j => j !== i);
+      gains[i] += 10 * others.length;
+      others.forEach(o => gains[o] -= 10);
+    }
+  }
+
+  const pousse = document.getElementById('tr-opt-pousse')?.checked ? 1.5 : 1;
+  for (let i = 0; i < TS.n; i++) {
+    gains[i] = Math.round(gains[i] * pousse * 10) / 10;
+    TS.joueurs[i].score += gains[i];
+    if (i === pi) { 
+      TS.joueurs[i].nbP++; 
+      if (gagne) TS.joueurs[i].nbG++; 
+    }
+  }
+
+  const cN = ['', 'Petite', 'Garde', '', 'Sans', '', 'Contre'];
+  TS.hist.unshift({ 
+    nom: `Donne ${TS.hist.length + 1} • ${TS.joueurs[pi].nom} ${gagne ? 'gagné ✅' : 'chuté ❌'} ${cN[co]}`, 
+    scores: gains.slice(0, TS.n) 
+  });
+
+  tSave(); tInitUI(); tRefreshClass();
+}
+
+function tRefreshClass() {
+  const sorted = [...TS.joueurs].slice(0,TS.n).sort((a,b) => b.score - a.score);
+  document.getElementById('tr-classement').innerHTML = sorted.map(j => {
+    const cls = j.score > 0 ? 'pos' : j.score < 0 ? 'neg' : 'zero';
+    return `<div class="score-row"><span class="sname">${j.nom}</span><span class="sval ${cls}">${j.score >= 0 ? '+' : ''}${j.score.toFixed(1)}</span></div>`;
+  }).join('');
+}
+
+function tTab(tab) {
+  showScreen('tarot-' + tab);
+  if (tab === 'hist')  tRenderHist();
+  if (tab === 'stats') { tRefreshClass(); tRenderStats(); }
+}
+function tRenderHist() {
+  const div = document.getElementById('tr-hist-list');
+  if (!TS.hist.length) { div.innerHTML = '<p style="color:#8e8e93;font-size:14px">Aucune donne pour l\'instant.</p>'; return; }
+  div.innerHTML = TS.hist.map((h,idx) => `<div class="hist-row">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#8e8e93">${h.nom}</span>
+      <button onclick="tDelHist(${idx})" style="background:none;border:none;font-size:15px;cursor:pointer;color:#ff3b30">🗑</button>
+    </div>
+    <div class="hist-chips">${h.scores.map((s,i) => `<span class="hchip ${s>0?'hc-green':s<0?'hc-red':'hc-gray'}">${TS.joueurs[i]?.nom||'J'+(i+1)} ${s>=0?'+':''}${s}</span>`).join('')}</div>
+  </div>`).join('');
+}
+function tDelHist(idx) {
+  const h = TS.hist[idx]; h.scores.forEach((s,i) => { if(TS.joueurs[i]) TS.joueurs[i].score -= s; });
+  TS.hist.splice(idx,1); tSave(); tRenderHist(); tRefreshClass();
+}
+function tRenderStats() {
+  drawGraph('tr-graph', TS.joueurs.slice(0,TS.n), TS.hist, null);
+  const sorted = [...TS.joueurs].slice(0,TS.n).sort((a,b)=>b.score-a.score);
+  document.getElementById('tr-bilan').innerHTML = sorted.map((j,r) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f2f2f7">
+      <div><div style="font-size:15px;font-weight:600">${['🥇','🥈','🥉'][r]||''} ${j.nom}</div>
+      <div style="font-size:12px;color:#8e8e93">${j.nbP} prises · ${j.nbG} gagnées · taux ${j.nbP?Math.round(j.nbG/j.nbP*100):0}%</div></div>
+      <div style="font-size:17px;font-weight:700;color:${j.score>=0?'#34c759':'#ff3b30'}">${j.score>=0?'+':''}${j.score.toFixed(1)}</div>
+    </div>`).join('');
+}
+function tReset() { TS.joueurs.forEach(j=>{j.score=0;j.nbP=0;j.nbG=0;}); TS.hist=[]; localStorage.removeItem('tarot_save'); tInitUI(); tRefreshClass(); }
+
+// ══════════════════════════════════════
+// ████  BELOTE  ████
+// ══════════════════════════════════════
+let BS = { nom1:'NOUS', nom2:'EUX', s1:0, s2:0, hist:[] };
+let bPre = 0;
+
+function bSave() { localStorage.setItem('belote_save', JSON.stringify(BS)); }
+function bLoad() {
+  const s = localStorage.getItem('belote_save');
+  if (s) try { BS = JSON.parse(s); } catch(e) {}
+  document.getElementById('bl-resume-wrap').style.display = s ? 'block' : 'none';
+  document.getElementById('bl-nom1').value = BS.nom1 || 'NOUS';
+  document.getElementById('bl-nom2').value = BS.nom2 || 'EUX';
+}
+function bStart() {
+  BS = { nom1:document.getElementById('bl-nom1').value.trim()||'NOUS', nom2:document.getElementById('bl-nom2').value.trim()||'EUX', s1:0, s2:0, hist:[] };
+  bSave(); bLaunch();
+}
+function bResume() { bLoad(); bLaunch(); }
+function bLaunch() { showScreen('belote-jeu'); bRefreshBoard(); bInitManche(); }
+function bRefreshBoard() {
+  document.getElementById('bl-n1').textContent = BS.nom1;
+  document.getElementById('bl-n2').textContent = BS.nom2;
+  document.getElementById('bl-s1').textContent = BS.s1;
+  document.getElementById('bl-s2').textContent = BS.s2;
+  document.getElementById('bl-pb1').textContent = BS.nom1;
+  document.getElementById('bl-pb2').textContent = BS.nom2;
+}
+function bInitManche() {
+  bPre = 0;
+  document.getElementById('bl-pb1').classList.add('active');
+  document.getElementById('bl-pb2').classList.remove('active');
+  document.getElementById('bl-dedans').checked = false;
+  document.getElementById('bl-pts-wrap').style.display = 'block';
+  document.getElementById('bl-pts').value = '';
+  document.getElementById('bl-capot').checked = false;
+  document.getElementById('bl-bp').checked = false;
+  document.getElementById('bl-bd').checked = false;
+  document.getElementById('bl-valider').disabled = true;
+}
+function bSetPre(v) {
+  bPre = v;
+  document.getElementById('bl-pb1').classList.toggle('active', v === 0);
+  document.getElementById('bl-pb2').classList.toggle('active', v === 1);
+}
+function bToggleDedans() {
+  const dd = document.getElementById('bl-dedans').checked;
+  document.getElementById('bl-pts-wrap').style.display = dd ? 'none' : 'block';
+  bCheck();
+}
+function bCheck() {
+  const dd  = document.getElementById('bl-dedans').checked;
+  const cap = document.getElementById('bl-capot').checked;
+  const pts = document.getElementById('bl-pts').value;
+  document.getElementById('bl-valider').disabled = !(dd || cap || (pts !== '' && !isNaN(parseInt(pts))));
+}
+function bValider() {
+  const dd  = document.getElementById('bl-dedans').checked;
+  const cap = document.getElementById('bl-capot').checked;
+  const bp  = document.getElementById('bl-bp').checked;
+  const bd  = document.getElementById('bl-bd').checked;
+  let pp = 0, pd = 0;
+  if (dd)       { pd = 160; pp = 0; }
+  else if (cap) { pp = 250; pd = 0; }
+  else          { const v = parseInt(document.getElementById('bl-pts').value)||0; pp = Math.min(v,160); pd = 160-pp; }
+  if (bp) pp += 20; if (bd) pd += 20;
+  let a1 = bPre===0 ? pp : pd, a2 = bPre===0 ? pd : pp;
+  BS.s1 += a1; BS.s2 += a2;
+  const desc = dd ? `${bPre===0?BS.nom1:BS.nom2} dedans 🔴` : cap ? `${bPre===0?BS.nom1:BS.nom2} capot 🟢` : `${bPre===0?BS.nom1:BS.nom2} ${pp} pts`;
+  BS.hist.unshift({ nom:`Manche ${BS.hist.length+1} · ${desc}`, scores:[a1,a2] });
+  bSave(); bRefreshBoard(); bInitManche();
+}
+function bTab(tab) { showScreen('belote-' + tab); if (tab==='hist') bRenderHist(); }
+function bRenderHist() {
+  const div = document.getElementById('bl-hist-list');
+  if (!BS.hist.length) { div.innerHTML = '<p style="color:#8e8e93;font-size:14px">Aucune manche pour l\'instant.</p>'; return; }
+  div.innerHTML = BS.hist.map((h,idx) => `<div class="hist-row">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#8e8e93">${h.nom}</span>
+      <button onclick="bDelHist(${idx})" style="background:none;border:none;font-size:15px;cursor:pointer;color:#ff3b30">🗑</button>
+    </div>
+    <div class="hist-chips">
+      <span class="hchip" style="background:rgba(0,122,255,0.8)">${BS.nom1} +${h.scores[0]}</span>
+      <span class="hchip" style="background:rgba(255,59,48,0.8)">${BS.nom2} +${h.scores[1]}</span>
+    </div>
+  </div>`).join('');
+}
+function bDelHist(idx) {
+  const h = BS.hist[idx]; BS.s1 -= h.scores[0]; BS.s2 -= h.scores[1];
+  BS.hist.splice(idx,1); bSave(); bRenderHist(); bRefreshBoard();
+}
+function bReset() { BS.s1=0; BS.s2=0; BS.hist=[]; localStorage.removeItem('belote_save'); bRefreshBoard(); bInitManche(); }
+
+// ══════════════════════════════════════
+// ████  DUTCH  ████
+// ══════════════════════════════════════
+let DS = { n:4, joueurs:[], hist:[], limite:100, over:false };
+
+function dSave() { localStorage.setItem('dutch_save', JSON.stringify(DS)); saveNoms('dutch_noms', DS.joueurs.slice(0,DS.n)); }
+function dLoad() {
+  const s = localStorage.getItem('dutch_save');
+  if (s) try { DS = JSON.parse(s); } catch(e) {}
+  document.getElementById('du-resume-wrap').style.display = s ? 'block' : 'none';
+  dRenderSetup();
+}
+function dRenderSetup() {
+  if (!DS.joueurs.length) DS.joueurs = Array(8).fill(0).map((_,i) => ({nom:'',score:0,nb:0}));
+  document.querySelectorAll('#du-mode button').forEach((b,i) => b.classList.toggle('active', i === DS.n - 2));
+  makeNomInputs('du-noms', DS.n, DS.joueurs, 'du', 'dutch_noms', '#5856D6');
+  dCheckStart();
+}
+function dMode(n) { DS.n = n; dRenderSetup(); }
+function dCheckStart() {
+  const ok = Array.from({length:DS.n}, (_,i) => (document.getElementById(`du-nom-${i}`)?.value||'').trim()!=='').every(Boolean);
+  const btn = document.getElementById('du-start-btn'); if (btn) btn.disabled = !ok;
+}
+function dStart() {
+  DS.limite = parseInt(document.getElementById('du-limite').value) || 100;
+  DS.joueurs = Array(DS.n).fill(0).map((_,i) => ({nom:(document.getElementById(`du-nom-${i}`)?.value||'').trim()||`J${i+1}`,score:0,nb:0}));
+  DS.hist = []; DS.over = false; dSave(); dLaunch();
+}
+function dResume() { dLoad(); dLaunch(); }
+function dLaunch() { showScreen('dutch-jeu'); dRenderInputs(); dRefreshUI(); }
+function dRenderInputs() {
+  const div = document.getElementById('du-score-inputs'); div.innerHTML = '';
+  for (let i = 0; i < DS.n; i++) {
+    const row = document.createElement('div'); row.className = 'input-row';
+    row.innerHTML = `<label style="display:flex;align-items:center;gap:8px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${COL[i]};display:inline-block;flex-shrink:0"></span>
+      ${DS.joueurs[i].nom||`J${i+1}`}
+    </label>
+    <input type="number" class="score-input" id="du-i-${i}" min="0" max="100" placeholder="pts" oninput="dCheckVal()">`;
+    div.appendChild(row);
+  }
+}
+function dCheckVal() {
+  const ok = Array.from({length:DS.n}, (_,i) => { const v=document.getElementById(`du-i-${i}`)?.value; return v!==''&&!isNaN(parseInt(v)); }).every(Boolean);
+  const btn = document.getElementById('du-valider'); if (btn) btn.disabled = !ok || DS.over;
+}
+function dRefreshUI() {
+  const sorted = [...DS.joueurs].slice(0,DS.n).sort((a,b)=>a.score-b.score);
+  const elim = DS.joueurs.filter(j=>j.score>=DS.limite);
+  DS.over = elim.length > 0;
+  const banner = document.getElementById('du-gameover');
+  if (DS.over) {
+    banner.style.display='block';
+    banner.innerHTML=`<div class="gameover-banner"><h3>🏁 Partie terminée !</h3><p>🏆 Gagnant : <strong>${sorted[0].nom}</strong> avec ${sorted[0].score} pts</p></div>`;
+  } else banner.style.display = 'none';
+  document.getElementById('du-classement').innerHTML = sorted.map((j,r) => {
+    const cls = j.score < DS.limite*0.4 ? 'low' : j.score < DS.limite*0.7 ? 'mid' : 'high';
+    const isE = j.score >= DS.limite;
+    return `<div class="score-row"><span class="sname">
+      ${r===0&&DS.over?'🏆':r===0?'🥇':r===1?'🥈':r===2?'🥉':`${r+1}.`} ${j.nom}
+      ${isE?'<span class="elim-badge">Éliminé</span>':''}
+    </span><span class="sval ${cls}">${j.score}</span></div>`;
+  }).join('');
+  document.getElementById('du-manche-n').textContent = DS.hist.length + 1;
+  document.getElementById('du-saisie-card').style.opacity = DS.over ? '0.5' : '1';
+  dCheckVal();
+}
+function dValider() {
+  const scores = Array.from({length:DS.n}, (_,i) => parseInt(document.getElementById(`du-i-${i}`)?.value)||0);
+  scores.forEach((s,i) => { DS.joueurs[i].score+=s; DS.joueurs[i].nb++; });
+  DS.hist.unshift({nom:`Manche ${DS.hist.length+1}`, scores:scores.slice(0,DS.n)});
+  for (let i=0;i<DS.n;i++) { const el=document.getElementById(`du-i-${i}`); if(el) el.value=''; }
+  dSave(); dRefreshUI();
+}
+function dTab(tab) {
+  showScreen('dutch-' + tab);
+  if (tab==='hist')  dRenderHist();
+  if (tab==='stats') dRenderStats();
+}
+function dRenderHist() {
+  const div = document.getElementById('du-hist-list');
+  if (!DS.hist.length) { div.innerHTML='<p style="color:#8e8e93;font-size:14px">Aucune manche pour l\'instant.</p>'; return; }
+  div.innerHTML = DS.hist.map((h,idx) => `<div class="hist-row">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#8e8e93">${h.nom}</span>
+      <button onclick="dDelHist(${idx})" style="background:none;border:none;font-size:15px;cursor:pointer;color:#ff3b30">🗑</button>
+    </div>
+    <div class="hist-chips">${h.scores.map((s,i)=>{
+      const cls=s===0?'hc-gray':s<10?'hc-green':s<20?'hc-orange':'hc-red';
+      return`<span class="hchip ${cls}">${DS.joueurs[i]?.nom||'J'+(i+1)} +${s}</span>`;
+    }).join('')}</div>
+  </div>`).join('');
+}
+function dDelHist(idx) {
+  const h=DS.hist[idx]; h.scores.forEach((s,i)=>{if(DS.joueurs[i])DS.joueurs[i].score-=s;});
+  DS.hist.splice(idx,1); DS.over=false; dSave(); dRenderHist(); dRefreshUI();
+}
+function dRenderStats() {
+  drawGraph('du-graph', DS.joueurs.slice(0,DS.n), DS.hist, DS.limite);
+  const sorted=[...DS.joueurs].slice(0,DS.n).sort((a,b)=>a.score-b.score);
+  document.getElementById('du-bilan').innerHTML = sorted.map((j,r) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f2f2f7">
+      <div><div style="font-size:15px;font-weight:600">${['🥇','🥈','🥉'][r]||''} ${j.nom}</div>
+      <div style="font-size:12px;color:#8e8e93">${j.nb} manche(s)</div></div>
+      <div style="font-size:17px;font-weight:700;color:${j.score<DS.limite*0.5?'#34c759':j.score<DS.limite*0.8?'#FF9500':'#ff3b30'}">${j.score} pts</div>
+    </div>`).join('');
+}
+function dReset() { DS.joueurs.forEach(j=>{j.score=0;j.nb=0;}); DS.hist=[]; DS.over=false; localStorage.removeItem('dutch_save'); dRenderInputs(); dRefreshUI(); }
+
+// ══════════════════════════════════════
+// ████  PAPAYOO  ████
+// ══════════════════════════════════════
+let PS = { n:4, joueurs:[], hist:[] };
+
+function pSave() { localStorage.setItem('papayoo_save', JSON.stringify(PS)); saveNoms('papayoo_noms', PS.joueurs.slice(0,PS.n)); }
+function pLoad() {
+  const s = localStorage.getItem('papayoo_save');
+  if (s) try { PS = JSON.parse(s); } catch(e) {}
+  document.getElementById('pa-resume-wrap').style.display = s ? 'block' : 'none';
+  pRenderSetup();
+}
+function pRenderSetup() {
+  if (!PS.joueurs.length) PS.joueurs = Array(8).fill(0).map((_,i) => ({nom:'',score:0,nb:0}));
+  document.querySelectorAll('#pa-mode button').forEach((b,i) => b.classList.toggle('active', i === PS.n - 3));
+  makeNomInputs('pa-noms', PS.n, PS.joueurs, 'pa', 'papayoo_noms', '#FF9500');
+  pCheckStart();
+}
+function pMode(n) { PS.n = n; pRenderSetup(); }
+function pCheckStart() {
+  const ok = Array.from({length:PS.n}, (_,i) => (document.getElementById(`pa-nom-${i}`)?.value||'').trim()!=='').every(Boolean);
+  const btn = document.getElementById('pa-start-btn'); if (btn) btn.disabled = !ok;
+}
+function pStart() {
+  PS.joueurs = Array(PS.n).fill(0).map((_,i) => ({nom:(document.getElementById(`pa-nom-${i}`)?.value||'').trim()||`J${i+1}`,score:0,nb:0}));
+  PS.hist = []; pSave(); pLaunch();
+}
+function pResume() { pLoad(); pLaunch(); }
+function pLaunch() { showScreen('papayoo-jeu'); pRenderInputs(); pRefreshUI(); }
+function pRenderInputs() {
+  const div = document.getElementById('pa-score-inputs'); div.innerHTML = '';
+  for (let i = 0; i < PS.n; i++) {
+    const row = document.createElement('div'); row.className = 'input-row';
+    row.innerHTML = `<label style="display:flex;align-items:center;gap:8px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${COL[i]};display:inline-block;flex-shrink:0"></span>
+      ${PS.joueurs[i].nom||`J${i+1}`}
+    </label>
+    <input type="number" class="score-input" id="pa-i-${i}" min="0" max="250" placeholder="pts" oninput="pCheckVal()">`;
+    div.appendChild(row);
+  }
+  document.querySelectorAll('#pa-score-inputs .score-input').forEach(el => {
+    el.style.outline = 'none';
+    el.addEventListener('focus', () => el.style.borderColor = '#FF9500');
+    el.addEventListener('blur',  () => el.style.borderColor = '#e0e0e0');
+  });
+}
+function pCheckVal() {
+  const vals = Array.from({length: PS.n}, (_, i) => { const v = document.getElementById(`pa-i-${i}`)?.value; return v === '' ? null : parseInt(v); });
+  const allFilled = vals.every(v => v !== null && !isNaN(v));
+  const total = allFilled ? vals.reduce((a, b) => a + b, 0) : vals.filter(v => v !== null && !isNaN(v)).reduce((a, b) => a + b, 0);
+  const badge = document.getElementById('pa-total');
+  const bval  = document.getElementById('pa-total-val');
+  if (bval)  bval.textContent = `${total} / 250`;
+  if (badge) badge.className = 'total-badge ' + (allFilled && total === 250 ? 'ok' : 'nok');
+  const btn = document.getElementById('pa-valider');
+  if (btn) btn.disabled = !(allFilled && total === 250);
+}
+function pRefreshUI() {
+  const sorted = [...PS.joueurs].slice(0, PS.n).sort((a, b) => a.score - b.score);
+  document.getElementById('pa-classement').innerHTML = sorted.map((j, r) => {
+    const cls = j.score < 100 ? 'low' : j.score < 200 ? 'mid' : 'high';
+    return `<div class="score-row"><span class="sname">${r===0?'🥇':r===1?'🥈':r===2?'🥉':`${r+1}.`} ${j.nom}</span><span class="sval ${cls}">${j.score}</span></div>`;
+  }).join('');
+  document.getElementById('pa-manche-n').textContent = PS.hist.length + 1;
+}
+function pValider() {
+  const couleur = document.getElementById('pa-couleur').value;
+  const scores  = Array.from({length: PS.n}, (_, i) => parseInt(document.getElementById(`pa-i-${i}`)?.value) || 0);
+  scores.forEach((s, i) => { PS.joueurs[i].score += s; PS.joueurs[i].nb++; });
+  PS.hist.unshift({ nom: `Manche ${PS.hist.length + 1} · Papayoo 7 ${couleur}`, scores: scores.slice(0, PS.n) });
+  for (let i = 0; i < PS.n; i++) { const el = document.getElementById(`pa-i-${i}`); if (el) el.value = ''; }
+  const badge = document.getElementById('pa-total'); if (badge) badge.className = 'total-badge nok';
+  const bval  = document.getElementById('pa-total-val'); if (bval) bval.textContent = '0 / 250';
+  const btn   = document.getElementById('pa-valider'); if (btn) btn.disabled = true;
+  pSave(); pRefreshUI();
+}
+function pTab(tab) {
+  showScreen('papayoo-' + tab);
+  if (tab === 'hist')  pRenderHist();
+  if (tab === 'stats') pRenderStats();
+}
+function pRenderHist() {
+  const div = document.getElementById('pa-hist-list');
+  if (!PS.hist.length) { div.innerHTML = '<p style="color:#8e8e93;font-size:14px">Aucune manche pour l\'instant.</p>'; return; }
+  div.innerHTML = PS.hist.map((h, idx) => `<div class="hist-row">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#8e8e93">${h.nom}</span>
+      <button onclick="pDelHist(${idx})" style="background:none;border:none;font-size:15px;cursor:pointer;color:#ff3b30">🗑</button>
+    </div>
+    <div class="hist-chips">${h.scores.map((s, i) => {
+      const cls = s === 0 ? 'hc-gray' : s < 50 ? 'hc-green' : s < 100 ? 'hc-orange' : 'hc-red';
+      return `<span class="hchip ${cls}">${PS.joueurs[i]?.nom || 'J'+(i+1)} ${s}</span>`;
+    }).join('')}</div>
+  </div>`).join('');
+}
+function pDelHist(idx) {
+  const h = PS.hist[idx]; h.scores.forEach((s, i) => { if (PS.joueurs[i]) PS.joueurs[i].score -= s; });
+  PS.hist.splice(idx, 1); pSave(); pRenderHist(); pRefreshUI();
+}
+function pRenderStats() {
+  drawGraph('pa-graph', PS.joueurs.slice(0, PS.n), PS.hist, null);
+  const sorted = [...PS.joueurs].slice(0, PS.n).sort((a, b) => a.score - b.score);
+  document.getElementById('pa-bilan').innerHTML = sorted.map((j, r) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f2f2f7">
+      <div><div style="font-size:15px;font-weight:600">${['🥇','🥈','🥉'][r] || ''} ${j.nom}</div><div style="font-size:12px;color:#8e8e93">${j.nb} manche(s)</div></div>
+      <div style="font-size:17px;font-weight:700;color:${j.score < 100 ? '#34c759' : j.score < 200 ? '#FF9500' : '#ff3b30'}">${j.score} pts</div>
+    </div>`).join('');
+}
+function pReset() { PS.joueurs.forEach(j => { j.score = 0; j.nb = 0; }); PS.hist = []; localStorage.removeItem('papayoo_save'); pRenderInputs(); pRefreshUI(); }
+</script>
+</body>
+</html>
