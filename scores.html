@@ -674,4 +674,495 @@ function tInitUI() {
   // Preneur / Partenaire / PAB selects
   ['tr-preneur','tr-partenaire','tr-pab'].forEach(sid => {
     const sel = document.getElementById(sid); if (!sel) return;
-    sel.innerHTML = sid === 'tr-pab' ? '<op
+    sel.innerHTML = sid === 'tr-pab' ? '<option value="-1">Personne</option>' : '';
+    for (let i = 0; i < TS.n; i++) {
+      const o = document.createElement('option'); o.value = i; o.textContent = TS.joueurs[i].nom || `J${i+1}`; sel.appendChild(o);
+    }
+  });
+  document.getElementById('tr-part-row').style.display = TS.n === 5 ? 'flex' : 'none';
+  document.getElementById('tr-slider').value = 45;
+  document.getElementById('tr-pts-manual').value = '';
+  document.getElementById('tr-att-val').textContent = '–';
+  document.getElementById('tr-def-val').textContent = '–';
+  document.getElementById('tr-badge').style.display = 'none';
+  document.getElementById('tr-bouts').selectedIndex = 0;
+  document.getElementById('tr-contrat').selectedIndex = 0;
+  document.getElementById('tr-chelem').selectedIndex = 0;
+  document.getElementById('tr-pab').value = '-1';
+
+  // Poignées
+  const pgDiv = document.getElementById('tr-poignees'); pgDiv.innerHTML = '';
+  const pgVals = T_POIGNEE_VALS[TS.n - 3] || T_POIGNEE_VALS[1];
+  const pgLabels = ['–', `Simple (${pgVals[0]}+)`, `Double (${pgVals[1]}+)`, `Triple (${pgVals[2]}+)`];
+  TS.joueurs.forEach((j, i) => {
+    const row = document.createElement('div'); row.className = 'prime-row';
+    row.innerHTML = `<span class="pname">${j.nom}</span>
+      <div class="segmented" id="tpg-${i}">${pgLabels.map((l,v)=>`<button onclick="tSetPg(${i},${v})" ${v===0?'class="active"':''}>${l}</button>`).join('')}</div>`;
+    pgDiv.appendChild(row);
+  });
+
+  // Misères
+  const msDiv = document.getElementById('tr-miseres'); msDiv.innerHTML = '';
+  TS.joueurs.forEach((j, i) => {
+    const row = document.createElement('div'); row.className = 'prime-row';
+    row.innerHTML = `<span class="pname">${j.nom}</span><button class="toggle-btn" id="tms-${i}" onclick="tToggleMs(${i})">💀 OFF</button>`;
+    msDiv.appendChild(row);
+  });
+}
+
+function tSetPg(i, v) {
+  tPoignees[i] = v;
+  document.querySelectorAll(`#tpg-${i} button`).forEach((b,j) => b.classList.toggle('active', j === v));
+}
+function tToggleMs(i) {
+  tMiseres[i] = !tMiseres[i];
+  const btn = document.getElementById(`tms-${i}`);
+  if (btn) { btn.textContent = tMiseres[i] ? '💀 ON' : '💀 OFF'; btn.classList.toggle('active', tMiseres[i]); }
+}
+
+function tSlider(v) {
+  const f = parseFloat(v);
+  document.getElementById('tr-att-val').textContent = f.toFixed(1);
+  document.getElementById('tr-def-val').textContent = (91 - f).toFixed(1);
+  document.getElementById('tr-pts-manual').value = f;
+  tUpdateBadge(f);
+}
+function tManual(v) {
+  const f = parseFloat(v);
+  if (!isNaN(f) && f >= 0 && f <= 91) {
+    document.getElementById('tr-slider').value = f;
+    document.getElementById('tr-att-val').textContent = f.toFixed(1);
+    document.getElementById('tr-def-val').textContent = (91 - f).toFixed(1);
+    tUpdateBadge(f);
+  }
+}
+function tUpdateBadge(pts) {
+  if (pts === undefined) pts = parseFloat(document.getElementById('tr-pts-manual').value);
+  const b = parseInt(document.getElementById('tr-bouts').value);
+  const s = T_SEUILS[b], d = pts - s;
+  const el = document.getElementById('tr-badge');
+  if (isNaN(pts)) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  if (d >= 0) { el.className = 'result-badge gagne'; el.innerHTML = `✅ Gagné de ${Math.abs(d).toFixed(1)} pts <span style="margin-left:auto;font-size:11px;opacity:0.7">Seuil : ${s}</span>`; }
+  else        { el.className = 'result-badge chute'; el.innerHTML = `❌ Chuté de ${Math.abs(d).toFixed(1)} pts <span style="margin-left:auto;font-size:11px;opacity:0.7">Seuil : ${s}</span>`; }
+}
+
+function tValider() {
+  const pts  = parseFloat(document.getElementById('tr-pts-manual').value);
+  const nb   = parseInt(document.getElementById('tr-bouts').value);
+  const co   = parseInt(document.getElementById('tr-contrat').value);
+  const ch   = parseInt(document.getElementById('tr-chelem').value);
+  const pab  = parseInt(document.getElementById('tr-pab').value);
+  const pi   = parseInt(document.getElementById('tr-preneur').value);
+  const pai  = parseInt(document.getElementById('tr-partenaire').value);
+  if (isNaN(pts)) return;
+
+  const s = T_SEUILS[nb], diff = pts - s, gagne = diff >= 0;
+  const pousse = document.getElementById('tr-opt-pousse')?.checked ? 1.5 : 1;
+  const vBase  = (25 + Math.abs(diff)) * co;
+  const vChelem= [0, 400, 200, -200][ch] || 0;
+  const gains  = Array(TS.n).fill(0);
+
+  const att  = TS.n === 5 && pai !== pi ? [pi, pai] : [pi];
+  const def  = Array.from({length:TS.n}, (_,i) => i).filter(i => !att.includes(i));
+  const signA = gagne ? 1 : -1;
+  const valDef = -(vBase + vChelem) * signA;
+  const valAtt = -valDef * def.length / att.length;
+
+  att.forEach(a => gains[a] += valAtt);
+  def.forEach(d2 => gains[d2] += valDef);
+
+  function distrib(j, v) {
+    const others = Array.from({length:TS.n}, (_,i) => i).filter(i => i !== j);
+    gains[j] += v * others.length; others.forEach(o => gains[o] -= v);
+  }
+  if (pab >= 0) distrib(pab, 10 * co);
+  const pgV = [0, 20, 30, 40];
+  for (let i = 0; i < TS.n; i++) { if (tPoignees[i] > 0) distrib(i, pgV[tPoignees[i]]); if (tMiseres[i]) distrib(i, 10); }
+  for (let i = 0; i < TS.n; i++) gains[i] = Math.round(gains[i] * pousse * 10) / 10;
+
+  TS.joueurs.forEach((j, i) => { j.score += gains[i]; if (i === pi) { j.nbP++; if (gagne) j.nbG++; } });
+  const cN = ['','Petite','Garde','','Sans','','Contre'];
+  TS.hist.unshift({ nom:`Donne ${TS.hist.length+1} • ${TS.joueurs[pi].nom} ${gagne?'✅':'❌'} ${cN[co]}`, scores:gains.slice(0,TS.n) });
+  tSave(); tInitUI(); tRefreshClass();
+}
+
+function tRefreshClass() {
+  const sorted = [...TS.joueurs].slice(0,TS.n).sort((a,b) => b.score - a.score);
+  document.getElementById('tr-classement').innerHTML = sorted.map(j => {
+    const cls = j.score > 0 ? 'pos' : j.score < 0 ? 'neg' : 'zero';
+    return `<div class="score-row"><span class="sname">${j.nom}</span><span class="sval ${cls}">${j.score >= 0 ? '+' : ''}${j.score.toFixed(1)}</span></div>`;
+  }).join('');
+}
+
+function tTab(tab) {
+  showScreen('tarot-' + tab);
+  if (tab === 'hist')  tRenderHist();
+  if (tab === 'stats') { tRefreshClass(); tRenderStats(); }
+}
+function tRenderHist() {
+  const div = document.getElementById('tr-hist-list');
+  if (!TS.hist.length) { div.innerHTML = '<p style="color:#8e8e93;font-size:14px">Aucune donne pour l\'instant.</p>'; return; }
+  div.innerHTML = TS.hist.map((h,idx) => `<div class="hist-row">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#8e8e93">${h.nom}</span>
+      <button onclick="tDelHist(${idx})" style="background:none;border:none;font-size:15px;cursor:pointer;color:#ff3b30">🗑</button>
+    </div>
+    <div class="hist-chips">${h.scores.map((s,i) => `<span class="hchip ${s>0?'hc-green':s<0?'hc-red':'hc-gray'}">${TS.joueurs[i]?.nom||'J'+(i+1)} ${s>=0?'+':''}${s}</span>`).join('')}</div>
+  </div>`).join('');
+}
+function tDelHist(idx) {
+  const h = TS.hist[idx]; h.scores.forEach((s,i) => { if(TS.joueurs[i]) TS.joueurs[i].score -= s; });
+  TS.hist.splice(idx,1); tSave(); tRenderHist(); tRefreshClass();
+}
+function tRenderStats() {
+  drawGraph('tr-graph', TS.joueurs.slice(0,TS.n), TS.hist, null);
+  const sorted = [...TS.joueurs].slice(0,TS.n).sort((a,b)=>b.score-a.score);
+  document.getElementById('tr-bilan').innerHTML = sorted.map((j,r) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f2f2f7">
+      <div><div style="font-size:15px;font-weight:600">${['🥇','🥈','🥉'][r]||''} ${j.nom}</div>
+      <div style="font-size:12px;color:#8e8e93">${j.nbP} prises · ${j.nbG} gagnées · taux ${j.nbP?Math.round(j.nbG/j.nbP*100):0}%</div></div>
+      <div style="font-size:17px;font-weight:700;color:${j.score>=0?'#34c759':'#ff3b30'}">${j.score>=0?'+':''}${j.score.toFixed(1)}</div>
+    </div>`).join('');
+}
+function tReset() { TS.joueurs.forEach(j=>{j.score=0;j.nbP=0;j.nbG=0;}); TS.hist=[]; localStorage.removeItem('tarot_save'); tInitUI(); tRefreshClass(); }
+
+// ══════════════════════════════════════
+// ████  BELOTE  ████
+// ══════════════════════════════════════
+let BS = { nom1:'NOUS', nom2:'EUX', s1:0, s2:0, hist:[] };
+let bPre = 0;
+
+function bSave() { localStorage.setItem('belote_save', JSON.stringify(BS)); }
+function bLoad() {
+  const s = localStorage.getItem('belote_save');
+  if (s) try { BS = JSON.parse(s); } catch(e) {}
+  document.getElementById('bl-resume-wrap').style.display = s ? 'block' : 'none';
+  document.getElementById('bl-nom1').value = BS.nom1 || 'NOUS';
+  document.getElementById('bl-nom2').value = BS.nom2 || 'EUX';
+}
+function bStart() {
+  BS = { nom1:document.getElementById('bl-nom1').value.trim()||'NOUS', nom2:document.getElementById('bl-nom2').value.trim()||'EUX', s1:0, s2:0, hist:[] };
+  bSave(); bLaunch();
+}
+function bResume() { bLoad(); bLaunch(); }
+function bLaunch() { showScreen('belote-jeu'); bRefreshBoard(); bInitManche(); }
+function bRefreshBoard() {
+  document.getElementById('bl-n1').textContent = BS.nom1;
+  document.getElementById('bl-n2').textContent = BS.nom2;
+  document.getElementById('bl-s1').textContent = BS.s1;
+  document.getElementById('bl-s2').textContent = BS.s2;
+  document.getElementById('bl-pb1').textContent = BS.nom1;
+  document.getElementById('bl-pb2').textContent = BS.nom2;
+}
+function bInitManche() {
+  bPre = 0;
+  document.getElementById('bl-pb1').classList.add('active');
+  document.getElementById('bl-pb2').classList.remove('active');
+  document.getElementById('bl-dedans').checked = false;
+  document.getElementById('bl-pts-wrap').style.display = 'block';
+  document.getElementById('bl-pts').value = '';
+  document.getElementById('bl-capot').checked = false;
+  document.getElementById('bl-bp').checked = false;
+  document.getElementById('bl-bd').checked = false;
+  document.getElementById('bl-valider').disabled = true;
+}
+function bSetPre(v) {
+  bPre = v;
+  document.getElementById('bl-pb1').classList.toggle('active', v === 0);
+  document.getElementById('bl-pb2').classList.toggle('active', v === 1);
+}
+function bToggleDedans() {
+  const dd = document.getElementById('bl-dedans').checked;
+  document.getElementById('bl-pts-wrap').style.display = dd ? 'none' : 'block';
+  bCheck();
+}
+function bCheck() {
+  const dd  = document.getElementById('bl-dedans').checked;
+  const cap = document.getElementById('bl-capot').checked;
+  const pts = document.getElementById('bl-pts').value;
+  document.getElementById('bl-valider').disabled = !(dd || cap || (pts !== '' && !isNaN(parseInt(pts))));
+}
+function bValider() {
+  const dd  = document.getElementById('bl-dedans').checked;
+  const cap = document.getElementById('bl-capot').checked;
+  const bp  = document.getElementById('bl-bp').checked;
+  const bd  = document.getElementById('bl-bd').checked;
+  let pp = 0, pd = 0;
+  if (dd)       { pd = 160; pp = 0; }
+  else if (cap) { pp = 250; pd = 0; }
+  else          { const v = parseInt(document.getElementById('bl-pts').value)||0; pp = Math.min(v,160); pd = 160-pp; }
+  if (bp) pp += 20; if (bd) pd += 20;
+  let a1 = bPre===0 ? pp : pd, a2 = bPre===0 ? pd : pp;
+  BS.s1 += a1; BS.s2 += a2;
+  const desc = dd ? `${bPre===0?BS.nom1:BS.nom2} dedans 🔴` : cap ? `${bPre===0?BS.nom1:BS.nom2} capot 🟢` : `${bPre===0?BS.nom1:BS.nom2} ${pp} pts`;
+  BS.hist.unshift({ nom:`Manche ${BS.hist.length+1} · ${desc}`, scores:[a1,a2] });
+  bSave(); bRefreshBoard(); bInitManche();
+}
+function bTab(tab) { showScreen('belote-' + tab); if (tab==='hist') bRenderHist(); }
+function bRenderHist() {
+  const div = document.getElementById('bl-hist-list');
+  if (!BS.hist.length) { div.innerHTML = '<p style="color:#8e8e93;font-size:14px">Aucune manche pour l\'instant.</p>'; return; }
+  div.innerHTML = BS.hist.map((h,idx) => `<div class="hist-row">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#8e8e93">${h.nom}</span>
+      <button onclick="bDelHist(${idx})" style="background:none;border:none;font-size:15px;cursor:pointer;color:#ff3b30">🗑</button>
+    </div>
+    <div class="hist-chips">
+      <span class="hchip" style="background:rgba(0,122,255,0.8)">${BS.nom1} +${h.scores[0]}</span>
+      <span class="hchip" style="background:rgba(255,59,48,0.8)">${BS.nom2} +${h.scores[1]}</span>
+    </div>
+  </div>`).join('');
+}
+function bDelHist(idx) {
+  const h = BS.hist[idx]; BS.s1 -= h.scores[0]; BS.s2 -= h.scores[1];
+  BS.hist.splice(idx,1); bSave(); bRenderHist(); bRefreshBoard();
+}
+function bReset() { BS.s1=0; BS.s2=0; BS.hist=[]; localStorage.removeItem('belote_save'); bRefreshBoard(); bInitManche(); }
+
+// ══════════════════════════════════════
+// ████  DUTCH  ████
+// ══════════════════════════════════════
+let DS = { n:4, joueurs:[], hist:[], limite:100, over:false };
+
+function dSave() { localStorage.setItem('dutch_save', JSON.stringify(DS)); saveNoms('dutch_noms', DS.joueurs.slice(0,DS.n)); }
+function dLoad() {
+  const s = localStorage.getItem('dutch_save');
+  if (s) try { DS = JSON.parse(s); } catch(e) {}
+  document.getElementById('du-resume-wrap').style.display = s ? 'block' : 'none';
+  dRenderSetup();
+}
+function dRenderSetup() {
+  if (!DS.joueurs.length) DS.joueurs = Array(8).fill(0).map((_,i) => ({nom:'',score:0,nb:0}));
+  document.querySelectorAll('#du-mode button').forEach((b,i) => b.classList.toggle('active', i === DS.n - 2));
+  makeNomInputs('du-noms', DS.n, DS.joueurs, 'du', 'dutch_noms', '#5856D6');
+  dCheckStart();
+}
+function dMode(n) { DS.n = n; dRenderSetup(); }
+function dCheckStart() {
+  const ok = Array.from({length:DS.n}, (_,i) => (document.getElementById(`du-nom-${i}`)?.value||'').trim()!=='').every(Boolean);
+  const btn = document.getElementById('du-start-btn'); if (btn) btn.disabled = !ok;
+}
+function dStart() {
+  DS.limite = parseInt(document.getElementById('du-limite').value) || 100;
+  DS.joueurs = Array(DS.n).fill(0).map((_,i) => ({nom:(document.getElementById(`du-nom-${i}`)?.value||'').trim()||`J${i+1}`,score:0,nb:0}));
+  DS.hist = []; DS.over = false; dSave(); dLaunch();
+}
+function dResume() { dLoad(); dLaunch(); }
+function dLaunch() { showScreen('dutch-jeu'); dRenderInputs(); dRefreshUI(); }
+function dRenderInputs() {
+  const div = document.getElementById('du-score-inputs'); div.innerHTML = '';
+  for (let i = 0; i < DS.n; i++) {
+    const row = document.createElement('div'); row.className = 'input-row';
+    row.innerHTML = `<label style="display:flex;align-items:center;gap:8px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${COL[i]};display:inline-block;flex-shrink:0"></span>
+      ${DS.joueurs[i].nom||`J${i+1}`}
+    </label>
+    <input type="number" class="score-input" id="du-i-${i}" min="0" max="100" placeholder="pts" oninput="dCheckVal()">`;
+    div.appendChild(row);
+  }
+}
+function dCheckVal() {
+  const ok = Array.from({length:DS.n}, (_,i) => { const v=document.getElementById(`du-i-${i}`)?.value; return v!==''&&!isNaN(parseInt(v)); }).every(Boolean);
+  const btn = document.getElementById('du-valider'); if (btn) btn.disabled = !ok || DS.over;
+}
+function dRefreshUI() {
+  const sorted = [...DS.joueurs].slice(0,DS.n).sort((a,b)=>a.score-b.score);
+  const elim = DS.joueurs.filter(j=>j.score>=DS.limite);
+  DS.over = elim.length > 0;
+  const banner = document.getElementById('du-gameover');
+  if (DS.over) {
+    banner.style.display='block';
+    banner.innerHTML=`<div class="gameover-banner"><h3>🏁 Partie terminée !</h3><p>🏆 Gagnant : <strong>${sorted[0].nom}</strong> avec ${sorted[0].score} pts</p></div>`;
+  } else banner.style.display = 'none';
+  document.getElementById('du-classement').innerHTML = sorted.map((j,r) => {
+    const cls = j.score < DS.limite*0.4 ? 'low' : j.score < DS.limite*0.7 ? 'mid' : 'high';
+    const isE = j.score >= DS.limite;
+    return `<div class="score-row"><span class="sname">
+      ${r===0&&DS.over?'🏆':r===0?'🥇':r===1?'🥈':r===2?'🥉':`${r+1}.`} ${j.nom}
+      ${isE?'<span class="elim-badge">Éliminé</span>':''}
+    </span><span class="sval ${cls}">${j.score}</span></div>`;
+  }).join('');
+  document.getElementById('du-manche-n').textContent = DS.hist.length + 1;
+  document.getElementById('du-saisie-card').style.opacity = DS.over ? '0.5' : '1';
+  dCheckVal();
+}
+function dValider() {
+  const scores = Array.from({length:DS.n}, (_,i) => parseInt(document.getElementById(`du-i-${i}`)?.value)||0);
+  scores.forEach((s,i) => { DS.joueurs[i].score+=s; DS.joueurs[i].nb++; });
+  DS.hist.unshift({nom:`Manche ${DS.hist.length+1}`, scores:scores.slice(0,DS.n)});
+  for (let i=0;i<DS.n;i++) { const el=document.getElementById(`du-i-${i}`); if(el) el.value=''; }
+  dSave(); dRefreshUI();
+}
+function dTab(tab) {
+  showScreen('dutch-' + tab);
+  if (tab==='hist')  dRenderHist();
+  if (tab==='stats') dRenderStats();
+}
+function dRenderHist() {
+  const div = document.getElementById('du-hist-list');
+  if (!DS.hist.length) { div.innerHTML='<p style="color:#8e8e93;font-size:14px">Aucune manche pour l\'instant.</p>'; return; }
+  div.innerHTML = DS.hist.map((h,idx) => `<div class="hist-row">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#8e8e93">${h.nom}</span>
+      <button onclick="dDelHist(${idx})" style="background:none;border:none;font-size:15px;cursor:pointer;color:#ff3b30">🗑</button>
+    </div>
+    <div class="hist-chips">${h.scores.map((s,i)=>{
+      const cls=s===0?'hc-gray':s<10?'hc-green':s<20?'hc-orange':'hc-red';
+      return`<span class="hchip ${cls}">${DS.joueurs[i]?.nom||'J'+(i+1)} +${s}</span>`;
+    }).join('')}</div>
+  </div>`).join('');
+}
+function dDelHist(idx) {
+  const h=DS.hist[idx]; h.scores.forEach((s,i)=>{if(DS.joueurs[i])DS.joueurs[i].score-=s;});
+  DS.hist.splice(idx,1); DS.over=false; dSave(); dRenderHist(); dRefreshUI();
+}
+function dRenderStats() {
+  drawGraph('du-graph', DS.joueurs.slice(0,DS.n), DS.hist, DS.limite);
+  const sorted=[...DS.joueurs].slice(0,DS.n).sort((a,b)=>a.score-b.score);
+  document.getElementById('du-bilan').innerHTML = sorted.map((j,r) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f2f2f7">
+      <div><div style="font-size:15px;font-weight:600">${['🥇','🥈','🥉'][r]||''} ${j.nom}</div>
+      <div style="font-size:12px;color:#8e8e93">${j.nb} manche(s)</div></div>
+      <div style="font-size:17px;font-weight:700;color:${j.score<DS.limite*0.5?'#34c759':j.score<DS.limite*0.8?'#FF9500':'#ff3b30'}">${j.score} pts</div>
+    </div>`).join('');
+}
+function dReset() { DS.joueurs.forEach(j=>{j.score=0;j.nb=0;}); DS.hist=[]; DS.over=false; localStorage.removeItem('dutch_save'); dRenderInputs(); dRefreshUI(); }
+
+// ══════════════════════════════════════
+// ████  PAPAYOO  ████
+// ══════════════════════════════════════
+let PS = { n:4, joueurs:[], hist:[] };
+
+function pSave() { localStorage.setItem('papayoo_save', JSON.stringify(PS)); saveNoms('papayoo_noms', PS.joueurs.slice(0,PS.n)); }
+function pLoad() {
+  const s = localStorage.getItem('papayoo_save');
+  if (s) try { PS = JSON.parse(s); } catch(e) {}
+  document.getElementById('pa-resume-wrap').style.display = s ? 'block' : 'none';
+  pRenderSetup();
+}
+function pRenderSetup() {
+  if (!PS.joueurs.length) PS.joueurs = Array(8).fill(0).map((_,i) => ({nom:'',score:0,nb:0}));
+  document.querySelectorAll('#pa-mode button').forEach((b,i) => b.classList.toggle('active', i === PS.n - 3));
+  makeNomInputs('pa-noms', PS.n, PS.joueurs, 'pa', 'papayoo_noms', '#FF9500');
+  pCheckStart();
+}
+function pMode(n) { PS.n = n; pRenderSetup(); }
+function pCheckStart() {
+  const ok = Array.from({length:PS.n}, (_,i) => (document.getElementById(`pa-nom-${i}`)?.value||'').trim()!=='').every(Boolean);
+  const btn = document.getElementById('pa-start-btn'); if (btn) btn.disabled = !ok;
+}
+function pStart() {
+  PS.joueurs = Array(PS.n).fill(0).map((_,i) => ({nom:(document.getElementById(`pa-nom-${i}`)?.value||'').trim()||`J${i+1}`,score:0,nb:0}));
+  PS.hist = []; pSave(); pLaunch();
+}
+function pResume() { pLoad(); pLaunch(); }
+function pLaunch() { showScreen('papayoo-jeu'); pRenderInputs(); pRefreshUI(); }
+function pRenderInputs() {
+  const div = document.getElementById('pa-score-inputs'); div.innerHTML = '';
+  for (let i = 0; i < PS.n; i++) {
+    const row = document.createElement('div'); row.className = 'input-row';
+    row.innerHTML = `<label style="display:flex;align-items:center;gap:8px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${COL[i]};display:inline-block;flex-shrink:0"></span>
+      ${PS.joueurs[i].nom||`J${i+1}`}
+    </label>
+    <input type="number" class="score-input" id="pa-i-${i}" min="0" max="250" placeholder="pts" oninput="pCheckVal()">`;
+    div.appendChild(row);
+  }
+  // focus style
+  document.querySelectorAll('#pa-score-inputs .score-input').forEach(el => {
+    el.style.outline = 'none';
+    el.addEventListener('focus', () => el.style.borderColor = '#FF9500');
+    el.addEventListener('blur',  () => el.style.borderColor = '#e0e0e0');
+  });
+}
+
+function pCheckVal() {
+  const vals = Array.from({length: PS.n}, (_, i) => {
+    const v = document.getElementById(`pa-i-${i}`)?.value;
+    return v === '' ? null : parseInt(v);
+  });
+  const allFilled = vals.every(v => v !== null && !isNaN(v));
+  const total = allFilled ? vals.reduce((a, b) => a + b, 0) : vals.filter(v => v !== null && !isNaN(v)).reduce((a, b) => a + b, 0);
+  const badge = document.getElementById('pa-total');
+  const bval  = document.getElementById('pa-total-val');
+  if (bval)  bval.textContent = `${total} / 250`;
+  if (badge) badge.className = 'total-badge ' + (allFilled && total === 250 ? 'ok' : 'nok');
+  const btn = document.getElementById('pa-valider');
+  if (btn) btn.disabled = !(allFilled && total === 250);
+}
+
+function pRefreshUI() {
+  const sorted = [...PS.joueurs].slice(0, PS.n).sort((a, b) => a.score - b.score);
+  document.getElementById('pa-classement').innerHTML = sorted.map((j, r) => {
+    const cls = j.score < 100 ? 'low' : j.score < 200 ? 'mid' : 'high';
+    return `<div class="score-row">
+      <span class="sname">${r===0?'🥇':r===1?'🥈':r===2?'🥉':`${r+1}.`} ${j.nom}</span>
+      <span class="sval ${cls}">${j.score}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('pa-manche-n').textContent = PS.hist.length + 1;
+}
+
+function pValider() {
+  const couleur = document.getElementById('pa-couleur').value;
+  const scores  = Array.from({length: PS.n}, (_, i) => parseInt(document.getElementById(`pa-i-${i}`)?.value) || 0);
+  scores.forEach((s, i) => { PS.joueurs[i].score += s; PS.joueurs[i].nb++; });
+  PS.hist.unshift({ nom: `Manche ${PS.hist.length + 1} · Papayoo 7 ${couleur}`, scores: scores.slice(0, PS.n) });
+  for (let i = 0; i < PS.n; i++) { const el = document.getElementById(`pa-i-${i}`); if (el) el.value = ''; }
+  const badge = document.getElementById('pa-total'); if (badge) badge.className = 'total-badge nok';
+  const bval  = document.getElementById('pa-total-val'); if (bval) bval.textContent = '0 / 250';
+  const btn   = document.getElementById('pa-valider'); if (btn) btn.disabled = true;
+  pSave(); pRefreshUI();
+}
+
+function pTab(tab) {
+  showScreen('papayoo-' + tab);
+  if (tab === 'hist')  pRenderHist();
+  if (tab === 'stats') pRenderStats();
+}
+
+function pRenderHist() {
+  const div = document.getElementById('pa-hist-list');
+  if (!PS.hist.length) { div.innerHTML = '<p style="color:#8e8e93;font-size:14px">Aucune manche pour l\'instant.</p>'; return; }
+  div.innerHTML = PS.hist.map((h, idx) => `<div class="hist-row">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#8e8e93">${h.nom}</span>
+      <button onclick="pDelHist(${idx})" style="background:none;border:none;font-size:15px;cursor:pointer;color:#ff3b30">🗑</button>
+    </div>
+    <div class="hist-chips">${h.scores.map((s, i) => {
+      const cls = s === 0 ? 'hc-gray' : s < 50 ? 'hc-green' : s < 100 ? 'hc-orange' : 'hc-red';
+      return `<span class="hchip ${cls}">${PS.joueurs[i]?.nom || 'J'+(i+1)} ${s}</span>`;
+    }).join('')}</div>
+  </div>`).join('');
+}
+
+function pDelHist(idx) {
+  const h = PS.hist[idx];
+  h.scores.forEach((s, i) => { if (PS.joueurs[i]) PS.joueurs[i].score -= s; });
+  PS.hist.splice(idx, 1);
+  pSave(); pRenderHist(); pRefreshUI();
+}
+
+function pRenderStats() {
+  drawGraph('pa-graph', PS.joueurs.slice(0, PS.n), PS.hist, null);
+  const sorted = [...PS.joueurs].slice(0, PS.n).sort((a, b) => a.score - b.score);
+  document.getElementById('pa-bilan').innerHTML = sorted.map((j, r) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f2f2f7">
+      <div>
+        <div style="font-size:15px;font-weight:600">${['🥇','🥈','🥉'][r] || ''} ${j.nom}</div>
+        <div style="font-size:12px;color:#8e8e93">${j.nb} manche(s)</div>
+      </div>
+      <div style="font-size:17px;font-weight:700;color:${j.score < 100 ? '#34c759' : j.score < 200 ? '#FF9500' : '#ff3b30'}">${j.score} pts</div>
+    </div>`).join('');
+}
+
+function pReset() {
+  PS.joueurs.forEach(j => { j.score = 0; j.nb = 0; });
+  PS.hist = [];
+  localStorage.removeItem('papayoo_save');
+  pRenderInputs(); pRefreshUI();
+}
+</script>
+</body>
+</html>
