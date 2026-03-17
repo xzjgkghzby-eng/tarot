@@ -8,6 +8,9 @@
     <meta name="apple-mobile-web-app-title" content="Tarot">
     <meta name="theme-color" content="#FF6B00">
     <link rel="manifest" href="manifest.json">
+    <!-- Icône Apple Touch Icon inline via SVG converti en PNG via canvas au chargement -->
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <link rel="icon" type="image/png" href="icon-180.png">
     <title>🎴 Tarot</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -20,11 +23,9 @@
             padding-bottom: 40px;
         }
 
-        /* ÉCRANS */
         .screen { display: none; }
         .screen.active { display: block; }
 
-        /* HEADER */
         .nav {
             background: rgba(255,255,255,0.9);
             backdrop-filter: blur(10px);
@@ -38,10 +39,8 @@
         .nav h1 { font-size: 20px; font-weight: 700; }
         .nav .subtitle { font-size: 12px; color: #8e8e93; margin-top: 2px; }
 
-        /* CONTAINER */
         .container { padding: 16px; max-width: 500px; margin: 0 auto; }
 
-        /* CARDS */
         .card {
             background: white;
             border-radius: 16px;
@@ -58,12 +57,11 @@
             font-weight: 600;
         }
 
-        /* ACCUEIL */
         .home-hero {
             text-align: center;
             padding: 40px 20px 20px;
         }
-        .home-hero .emoji { font-size: 70px; }
+        .home-hero .logo-svg { width: 80px; height: 80px; }
         .home-hero h2 { font-size: 28px; font-weight: 700; margin-top: 12px; }
         .home-hero p { color: #8e8e93; margin-top: 6px; }
 
@@ -84,7 +82,6 @@
         .resume-btn .text strong { display: block; color: #2e7d32; font-size: 15px; }
         .resume-btn .text span { font-size: 12px; color: #4caf50; }
 
-        /* SEGMENTED CONTROL */
         .segmented {
             display: flex;
             background: #f2f2f7;
@@ -110,7 +107,6 @@
             box-shadow: 0 1px 4px rgba(0,0,0,0.12);
         }
 
-        /* INPUTS */
         .input-row {
             display: flex;
             align-items: center;
@@ -138,7 +134,6 @@
             text-align: left;
         }
 
-        /* SELECT */
         select {
             border: 1px solid #e0e0e0;
             border-radius: 8px;
@@ -150,7 +145,6 @@
             color: #1c1c1e;
         }
 
-        /* SLIDER */
         .slider-container { padding: 4px 0; }
         .slider-labels {
             display: flex;
@@ -184,7 +178,6 @@
         .result-badge.gagne { background: #e8f5e9; color: #2e7d32; }
         .result-badge.chute { background: #ffebee; color: #c62828; }
 
-        /* SCORES */
         .score-row {
             display: flex;
             align-items: center;
@@ -198,16 +191,7 @@
         .score-row .score.pos { color: #34c759; }
         .score-row .score.neg { color: #ff3b30; }
         .score-row .score.zero { color: #8e8e93; }
-        .donneur-badge {
-            font-size: 11px;
-            background: #FF6B00;
-            color: white;
-            padding: 2px 7px;
-            border-radius: 20px;
-            margin-left: 6px;
-        }
 
-        /* PRIMES */
         .prime-row {
             display: flex;
             align-items: center;
@@ -229,7 +213,6 @@
         }
         .toggle-btn.active { background: #ffebee; }
 
-        /* BOUTONS PRINCIPAUX */
         .btn {
             width: 100%;
             padding: 15px;
@@ -254,7 +237,6 @@
         .btn-red { background: #ff3b30; color: white; }
         .btn-gray { background: #f2f2f7; color: #1c1c1e; }
 
-        /* SUGGESTIONS */
         .suggestions {
             display: flex;
             flex-wrap: wrap;
@@ -273,7 +255,6 @@
             font-family: inherit;
         }
 
-        /* HISTORIQUE */
         .donne-row {
             padding: 10px 0;
             border-bottom: 1px solid #f2f2f7;
@@ -292,7 +273,6 @@
         .gain-neg { background: rgba(255,59,48,0.85); }
         .gain-zero { background: rgba(142,142,147,0.7); }
 
-        /* STATS */
         .stat-row {
             padding: 10px 0;
             border-bottom: 1px solid #f2f2f7;
@@ -302,7 +282,6 @@
         .stat-score { font-size: 15px; font-weight: 700; }
         .stat-details { font-size: 12px; color: #8e8e93; margin-top: 2px; }
 
-        /* MODAL */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -337,10 +316,8 @@
         .modal-btn.danger { color: #ff3b30; }
         .modal-btn.cancel { text-align: center; color: #007AFF; font-weight: 600; }
 
-        /* GRAPH */
         canvas { width: 100%; border-radius: 10px; }
 
-        /* TABS */
         .tabs {
             display: flex;
             background: white;
@@ -371,11 +348,25 @@
 </head>
 <body>
 
+<!-- Canvas caché pour générer l'icône PWA -->
+<canvas id="icon-canvas" width="180" height="180" style="display:none"></canvas>
+
 <!-- ÉCRAN ACCUEIL / SETUP -->
 <div id="screen-setup" class="screen active">
     <div class="container">
         <div class="home-hero">
-            <div class="emoji">🎴</div>
+            <!-- Logo SVG custom -->
+            <svg class="logo-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="80" height="80" rx="18" fill="#FF6B00"/>
+                <!-- Pique -->
+                <text x="12" y="38" font-size="26" fill="white" opacity="0.95">♠</text>
+                <!-- Cœur -->
+                <text x="42" y="38" font-size="26" fill="white" opacity="0.95">♥</text>
+                <!-- Carreau -->
+                <text x="12" y="65" font-size="26" fill="white" opacity="0.95">♦</text>
+                <!-- Trèfle -->
+                <text x="42" y="65" font-size="26" fill="white" opacity="0.95">♣</text>
+            </svg>
             <h2>Tarot</h2>
             <p>Compteur de points</p>
         </div>
@@ -413,10 +404,9 @@
 <!-- ÉCRAN JEU -->
 <div id="screen-jeu" class="screen">
     <div class="nav">
-        <div class="nav-row" style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
-                <div class="nav-h1" id="nav-title" style="font-size:18px;font-weight:700">🎴 Tarot</div>
-                <div class="subtitle" id="nav-donneur"></div>
+                <div style="font-size:18px;font-weight:700">🎴 Tarot</div>
             </div>
             <button onclick="goSetup()" style="background:none;border:none;font-size:13px;color:#FF6B00;cursor:pointer">⚙️ Paramètres</button>
         </div>
@@ -433,7 +423,7 @@
 
             <!-- Manche -->
             <div class="card">
-                <div class="card-title">🎯 Manche</div>
+                <div class="card-title">🎯 Nouvelle donne</div>
 
                 <div class="input-row">
                     <label>Preneur</label>
@@ -470,11 +460,11 @@
                     <div class="slider-labels">
                         <div class="att">
                             <div class="label">⚔️ Attaque</div>
-                            <div class="val" id="val-attaque">0</div>
+                            <div class="val" id="val-attaque">–</div>
                         </div>
                         <div class="def">
                             <div class="label">🛡️ Défense</div>
-                            <div class="val" id="val-defense">91</div>
+                            <div class="val" id="val-defense">–</div>
                         </div>
                     </div>
                     <input type="range" id="slider-pts" min="0" max="91" step="1" value="0"
@@ -525,7 +515,6 @@
         </div>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs">
         <button class="tab active" onclick="showTab('jeu')" id="tab-jeu">
             <span class="tab-icon">🎯</span>
@@ -662,13 +651,56 @@ let state = {
 
 const COULEURS = ['#FF6B00','#007AFF','#34c759','#ff3b30','#af52de'];
 
+// Seuils poignées selon nombre de joueurs [simple, double, triple]
+const SEUILS_POIGNEE = { 3: [13,15,18], 4: [10,13,15], 5: [8,10,13] };
+
 // =====================
 // INIT
 // =====================
 window.onload = () => {
+    genererIcone();
     chargerPartie();
     renderSetup();
 };
+
+// Génère l'icône PWA dynamiquement via canvas
+function genererIcone() {
+    const canvas = document.getElementById('icon-canvas');
+    const ctx = canvas.getContext('2d');
+    const r = 18;
+    const w = 180, h = 180;
+
+    // Fond arrondi orange
+    ctx.fillStyle = '#FF6B00';
+    ctx.beginPath();
+    ctx.moveTo(r, 0);
+    ctx.lineTo(w-r, 0);
+    ctx.quadraticCurveTo(w, 0, w, r);
+    ctx.lineTo(w, h-r);
+    ctx.quadraticCurveTo(w, h, w-r, h);
+    ctx.lineTo(r, h);
+    ctx.quadraticCurveTo(0, h, 0, h-r);
+    ctx.lineTo(0, r);
+    ctx.quadraticCurveTo(0, 0, r, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    // Symboles cartes
+    ctx.font = '60px serif';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.fillText('♠', 55, 75);
+    ctx.fillText('♥', 125, 75);
+    ctx.fillText('♦', 55, 145);
+    ctx.fillText('♣', 125, 145);
+
+    // Applique comme icône apple-touch
+    const dataUrl = canvas.toDataURL('image/png');
+    const link = document.querySelector('link[rel="apple-touch-icon"]');
+    if (link) link.href = dataUrl;
+    const linkIcon = document.querySelector('link[rel="icon"]');
+    if (linkIcon) linkIcon.href = dataUrl;
+}
 
 function chargerPartie() {
     const saved = localStorage.getItem('tarot_partie');
@@ -769,7 +801,6 @@ function checkStartBtn() {
 }
 
 function demarrerPartie() {
-    // Reset scores mais garde les noms
     state.joueurs = Array(5).fill(null).map((_, i) => ({
         id: i,
         nom: (document.getElementById(`nom-${i}`)?.value || '').trim() || `J${i+1}`,
@@ -786,11 +817,10 @@ function reprendrePartie() {
 }
 
 function goSetup() {
+    ['setup','jeu','historique','stats','options'].forEach(s =>
+        document.getElementById(`screen-${s}`).classList.remove('active')
+    );
     document.getElementById('screen-setup').classList.add('active');
-    document.getElementById('screen-jeu').classList.remove('active');
-    document.getElementById('screen-historique').classList.remove('active');
-    document.getElementById('screen-stats').classList.remove('active');
-    document.getElementById('screen-options').classList.remove('active');
     document.getElementById('resume-section').style.display =
         localStorage.getItem('tarot_partie') ? 'block' : 'none';
     renderSetup();
@@ -800,22 +830,23 @@ function goSetup() {
 // JEU
 // =====================
 function lancerJeu() {
-    document.getElementById('screen-setup').classList.remove('active');
+    ['setup','jeu','historique','stats','options'].forEach(s =>
+        document.getElementById(`screen-${s}`).classList.remove('active')
+    );
     document.getElementById('screen-jeu').classList.add('active');
-    document.getElementById('screen-historique').classList.remove('active');
-    document.getElementById('screen-stats').classList.remove('active');
-    document.getElementById('screen-options').classList.remove('active');
     reinitManche();
     updateUI();
 }
 
+function getLabelsPoignee() {
+    const s = SEUILS_POIGNEE[state.modeJeu] || SEUILS_POIGNEE[4];
+    return ['–', `Simple (${s[0]}+)`, `Double (${s[1]}+)`, `Triple (${s[2]}+)`];
+}
+
 function updateUI() {
-    // Selects preneur/partenaire
     const preneurSel = document.getElementById('sel-preneur');
     const partSel = document.getElementById('sel-partenaire');
     const pbSel = document.getElementById('sel-petitaubout');
-    const preneurVal = preneurSel.value;
-    const partVal = partSel.value;
 
     [preneurSel, partSel, pbSel].forEach(sel => {
         const old = sel.value;
@@ -826,29 +857,30 @@ function updateUI() {
             opt.textContent = state.joueurs[i]?.nom || `J${i+1}`;
             sel.appendChild(opt);
         }
-        sel.value = old;
+        // Remet la valeur précédente si valide
+        if (old !== null && old !== '' && sel.querySelector(`option[value="${old}"]`)) {
+            sel.value = old;
+        }
     });
 
     document.getElementById('row-partenaire').style.display =
         state.modeJeu === 5 ? 'flex' : 'none';
 
-    // Classement
+    // Classement — SANS badge donneur
     const classement = [...state.joueurs].slice(0, state.modeJeu)
         .sort((a, b) => b.score - a.score);
-    const donneur = state.joueurs[state.indexDonneur % state.modeJeu];
-    document.getElementById('nav-donneur').textContent = `Donneur : ${donneur?.nom || ''}`;
 
     const cl = document.getElementById('classement');
     cl.innerHTML = classement.map(j => {
         const cls = j.score > 0 ? 'pos' : j.score < 0 ? 'neg' : 'zero';
-        const isDonneur = j.id === state.indexDonneur % state.modeJeu;
         return `<div class="score-row">
-            <span class="name">${j.nom}${isDonneur ? '<span class="donneur-badge">Donne</span>' : ''}</span>
+            <span class="name">${j.nom}</span>
             <span class="score ${cls}">${j.score >= 0 ? '+' : ''}${j.score.toFixed(1)}</span>
         </div>`;
     }).join('');
 
-    // Primes joueurs
+    // Primes joueurs avec labels poignée dynamiques
+    const labels = getLabelsPoignee();
     const primesDiv = document.getElementById('primes-joueurs');
     primesDiv.innerHTML = '';
     for (let i = 0; i < state.modeJeu; i++) {
@@ -857,17 +889,16 @@ function updateUI() {
         row.innerHTML = `
             <span class="name">${state.joueurs[i]?.nom || `J${i+1}`}</span>
             <div class="segmented" id="poignee-${i}">
-                <button onclick="setPoignee(${i},0)" class="active">–</button>
-                <button onclick="setPoignee(${i},1)">P.</button>
-                <button onclick="setPoignee(${i},2)">PP</button>
-                <button onclick="setPoignee(${i},3)">PPP</button>
+                <button onclick="setPoignee(${i},0)" class="active">${labels[0]}</button>
+                <button onclick="setPoignee(${i},1)">${labels[1]}</button>
+                <button onclick="setPoignee(${i},2)">${labels[2]}</button>
+                <button onclick="setPoignee(${i},3)">${labels[3]}</button>
             </div>
             <button class="toggle-btn" id="misere-${i}" onclick="toggleMisere(${i})">💀</button>
         `;
         primesDiv.appendChild(row);
     }
 
-    // Options
     document.getElementById('opt-pousse').checked = state.options.pousse;
     document.getElementById('opt-demi').checked = state.options.demiPoints;
     document.getElementById('opt-vocal').checked = state.options.vocal;
@@ -890,18 +921,30 @@ function toggleMisere(i) {
     document.getElementById(`misere-${i}`).classList.toggle('active', miseres[i]);
 }
 
+// ── MODIFICATION CLÉ : reinitManche remet tout à zéro ──
 function reinitManche() {
     poignees = [0,0,0,0,0];
     miseres = [false,false,false,false,false];
+
+    // Slider et saisie
     document.getElementById('slider-pts').value = 0;
     document.getElementById('input-pts').value = '';
-    document.getElementById('val-attaque').textContent = '0';
-    document.getElementById('val-defense').textContent = '91';
+    document.getElementById('val-attaque').textContent = '–';
+    document.getElementById('val-defense').textContent = '–';
     document.getElementById('result-badge').style.display = 'none';
+
+    // ── Remise à zéro des selects à chaque manche ──
     document.getElementById('sel-bouts').value = '0';
     document.getElementById('sel-contrat').value = '1';
     document.getElementById('sel-chelem').value = '0';
     document.getElementById('sel-petitaubout').value = '-1';
+
+    // Remet le preneur au premier joueur (index 0)
+    const preneurSel = document.getElementById('sel-preneur');
+    if (preneurSel) preneurSel.selectedIndex = 0;
+    const partSel = document.getElementById('sel-partenaire');
+    if (partSel) partSel.selectedIndex = 0;
+
     checkValider();
 }
 
@@ -935,6 +978,7 @@ function updateBadge(pts) {
     const seuil = seuils[bouts];
     const diff = pts - seuil;
     const badge = document.getElementById('result-badge');
+    if (isNaN(pts)) { badge.style.display = 'none'; return; }
     badge.style.display = 'flex';
     if (diff >= 0) {
         badge.className = 'result-badge gagne';
@@ -978,7 +1022,6 @@ function validerManche() {
     if (state.modeJeu === 5 && partIdx !== preneurIdx) attaque.push(partIdx);
     const defense = Array.from({length: state.modeJeu}, (_,i) => i).filter(i => !attaque.includes(i));
 
-    // Base
     const total = -valDef * defense.length;
     if (attaque.length === 2) {
         gains[attaque[0]] += total * 2/3;
@@ -988,7 +1031,6 @@ function validerManche() {
     }
     defense.forEach(d => gains[d] += valDef);
 
-    // Primes
     const distribuerPrime = (joueur, valeur) => {
         const adv = Array.from({length: state.modeJeu}, (_,i) => i).filter(i => i !== joueur);
         adv.forEach(a => gains[a] -= valeur);
@@ -1002,11 +1044,9 @@ function validerManche() {
         if (miseres[i]) distribuerPrime(i, 10);
     }
 
-    // Pousse
     const mult = state.options.pousse ? 1.5 : 1.0;
     for (let i = 0; i < state.modeJeu; i++) gains[i] *= mult;
 
-    // Appliquer
     for (let i = 0; i < state.modeJeu; i++) {
         state.joueurs[i].score += gains[i];
         if (i === preneurIdx) {
@@ -1015,15 +1055,15 @@ function validerManche() {
         }
     }
 
-    // Nom donne
     const contratNoms = ['','Petite','Garde','','Sans','','Contre'];
     const diffStr = Math.abs(diff).toFixed(1);
-    const nom = `Donne ${state.historique.length+1} • ${state.joueurs[preneurIdx].nom} ${gagne ? `a gagné de ${diffStr} pts • ${contratNoms[contratRaw]} 🟢` : `a chuté de ${diffStr} pts • ${contratNoms[contratRaw]} 🔴`}`;
+    const nom = `Donne ${state.historique.length+1} • ${state.joueurs[preneurIdx].nom} ${gagne
+        ? `a gagné de ${diffStr} pts • ${contratNoms[contratRaw]} 🟢`
+        : `a chuté de ${diffStr} pts • ${contratNoms[contratRaw]} 🔴`}`;
 
     state.historique.unshift({ nom, gains: gains.slice(0, state.modeJeu) });
     state.indexDonneur = (state.indexDonneur + 1) % state.modeJeu;
 
-    // Vocal
     if (state.options.vocal) {
         const msg = gagne
             ? `${state.joueurs[preneurIdx].nom} a gagné.`
@@ -1042,17 +1082,10 @@ function validerManche() {
 // TABS
 // =====================
 function showTab(tab) {
-    ['jeu','historique','stats','options'].forEach(t => {
-        document.getElementById(`screen-${t === 'jeu' ? 'jeu' : t}`).classList.remove('active');
-    });
-    document.getElementById(tab === 'jeu' ? 'screen-jeu' : `screen-${tab}`).classList.add('active');
-    // Update all tab active states
-    for (let i = 1; i <= 4; i++) {
-        [`tab-${tab}`,`tab2-${tab}`,`tab3-${tab}`,`tab4-${tab}`].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.classList.toggle('active', true);
-        });
-    }
+    const screens = { jeu:'screen-jeu', historique:'screen-historique', stats:'screen-stats', options:'screen-options' };
+    Object.values(screens).forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById(screens[tab]).classList.add('active');
+
     ['jeu','historique','stats','options'].forEach(t => {
         [`tab-${t}`,`tab2-${t}`,`tab3-${t}`,`tab4-${t}`].forEach(id => {
             const el = document.getElementById(id);
@@ -1082,14 +1115,12 @@ function renderHistorique() {
         <div class="donne-row">
             <div style="display:flex;justify-content:space-between;align-items:center">
                 <div class="donne-nom">${d.nom}</div>
-                <button onclick="supprimerDonne(${idx})"
-                    style="background:none;border:none;color:#ff3b30;font-size:18px;cursor:pointer">🗑️</button>
+                <button onclick="supprimerDonne(${idx})" style="background:none;border:none;font-size:16px;cursor:pointer;color:#ff3b30">🗑</button>
             </div>
             <div class="gains-row">
                 ${d.gains.map((g, i) => {
                     const cls = g > 0 ? 'gain-pos' : g < 0 ? 'gain-neg' : 'gain-zero';
-                    const name = state.joueurs[i]?.nom || `J${i+1}`;
-                    return `<span class="gain-chip ${cls}">${name} ${g >= 0 ? '+' : ''}${g.toFixed(1)}</span>`;
+                    return `<span class="gain-chip ${cls}">${state.joueurs[i]?.nom || `J${i+1}`} ${g >= 0 ? '+' : ''}${g.toFixed(1)}</span>`;
                 }).join('')}
             </div>
         </div>
@@ -1098,107 +1129,140 @@ function renderHistorique() {
 
 function supprimerDonne(idx) {
     const d = state.historique[idx];
-    d.gains.forEach((g, i) => { state.joueurs[i].score -= g; });
+    // Annule les gains
+    d.gains.forEach((g, i) => { if (state.joueurs[i]) state.joueurs[i].score -= g; });
     state.historique.splice(idx, 1);
     sauvegarderPartie();
-    updateUI();
     renderHistorique();
+    updateUI();
 }
 
 // =====================
-// STATS
+// STATS + GRAPHIQUE AVEC NOMS
 // =====================
 function renderStats() {
-    const classement = [...state.joueurs].slice(0, state.modeJeu)
-        .sort((a, b) => b.score - a.score);
-
-    document.getElementById('stats-joueurs').innerHTML = classement.map(j => `
-        <div class="stat-row">
-            <div style="display:flex;justify-content:space-between">
-                <span class="stat-name">${j.nom}</span>
-                <span class="stat-score" style="color:${j.score >= 0 ? '#34c759' : '#ff3b30'}">
-                    ${j.score >= 0 ? '+' : ''}${j.score.toFixed(1)} pts
-                </span>
-            </div>
-            <div class="stat-details">
-                Preneur : ${j.nbPreneur} donne(s) •
-                Réussite : ${j.nbPreneur > 0 ? Math.round(j.nbGagnes/j.nbPreneur*100)+'%' : '–'}
-            </div>
-        </div>
-    `).join('');
-
-    dessinerGraph();
-}
-
-function dessinerGraph() {
     const canvas = document.getElementById('graph');
     const ctx = canvas.getContext('2d');
-    canvas.width = canvas.offsetWidth * 2;
-    canvas.height = 400;
-    ctx.scale(2, 2);
+    const W = canvas.offsetWidth || 360;
+    canvas.width = W * window.devicePixelRatio;
+    canvas.height = 200 * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-    const W = canvas.offsetWidth / 2;
-    const H = 200;
-    const pad = 30;
+    const nb = state.modeJeu;
+    const hist = [...state.historique].reverse(); // chronologique
+    const nbDonnes = hist.length;
 
-    ctx.clearRect(0, 0, W, H);
-
-    if (state.historique.length === 0) {
-        ctx.fillStyle = '#8e8e93';
-        ctx.font = '13px -apple-system';
-        ctx.textAlign = 'center';
-        ctx.fillText('Aucune donne', W/2, H/2);
-        return;
-    }
-
-    // Cumuls
-    const series = Array(state.modeJeu).fill(null).map(() => [0]);
-    [...state.historique].reverse().forEach(d => {
+    // Reconstruit les courbes de score pour chaque joueur
+    const courbes = Array(nb).fill(null).map(() => [0]);
+    hist.forEach(d => {
         d.gains.forEach((g, i) => {
-            series[i].push((series[i][series[i].length-1] || 0) + g);
+            if (i < nb) courbes[i].push((courbes[i].at(-1) || 0) + g);
         });
     });
 
-    const allVals = series.flat();
+    const allVals = courbes.flat();
     const minV = Math.min(...allVals);
     const maxV = Math.max(...allVals);
-    const rangeV = maxV - minV || 1;
+    const range = maxV - minV || 1;
 
-    const xStep = (W - pad*2) / (series[0].length - 1);
-    const toY = v => pad + (1 - (v - minV) / rangeV) * (H - pad*2);
+    const PAD_LEFT = 40, PAD_RIGHT = 10, PAD_TOP = 24, PAD_BOTTOM = 36;
+    const gW = W - PAD_LEFT - PAD_RIGHT;
+    const gH = 200 - PAD_TOP - PAD_BOTTOM;
+
+    ctx.clearRect(0, 0, W, 200);
 
     // Grille
-    ctx.strokeStyle = '#f2f2f7';
+    ctx.strokeStyle = '#f0f0f0';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
-        const y = pad + i * (H - pad*2) / 4;
-        ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W-pad, y); ctx.stroke();
+        const y = PAD_TOP + (gH / 4) * i;
+        ctx.beginPath(); ctx.moveTo(PAD_LEFT, y); ctx.lineTo(PAD_LEFT + gW, y); ctx.stroke();
+        const val = maxV - (range / 4) * i;
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(Math.round(val), PAD_LEFT - 4, y + 4);
     }
 
-    // Lignes
-    series.forEach((pts, idx) => {
-        ctx.strokeStyle = COULEURS[idx];
-        ctx.lineWidth = 2;
+    // Axe zéro
+    const yZero = PAD_TOP + ((maxV - 0) / range) * gH;
+    if (yZero >= PAD_TOP && yZero <= PAD_TOP + gH) {
+        ctx.strokeStyle = '#c7c7cc';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(PAD_LEFT, yZero); ctx.lineTo(PAD_LEFT + gW, yZero); ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Courbes
+    courbes.forEach((pts, i) => {
+        if (i >= nb) return;
+        const color = COULEURS[i];
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
         ctx.beginPath();
-        pts.forEach((v, i) => {
-            const x = pad + i * xStep;
-            const y = toY(v);
-            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        pts.forEach((v, x) => {
+            const px = PAD_LEFT + (nbDonnes > 0 ? (x / nbDonnes) * gW : 0);
+            const py = PAD_TOP + ((maxV - v) / range) * gH;
+            x === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
         });
         ctx.stroke();
 
-        // Point final + nom
-        const lastX = pad + (pts.length-1) * xStep;
-        const lastY = toY(pts[pts.length-1]);
-        ctx.fillStyle = COULEURS[idx];
-        ctx.beginPath();
-        ctx.arc(lastX, lastY, 3, 0, Math.PI*2);
-        ctx.fill();
+        // Point final + NOM DU JOUEUR affiché sur le graphique
+        if (pts.length > 0) {
+            const lastX = PAD_LEFT + (nbDonnes > 0 ? ((pts.length - 1) / nbDonnes) * gW : 0);
+            const lastY = PAD_TOP + ((maxV - pts.at(-1)) / range) * gH;
+
+            // Cercle
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            // Nom du joueur à la fin de la courbe
+            const nom = state.joueurs[i]?.nom || `J${i+1}`;
+            ctx.font = 'bold 11px -apple-system, sans-serif';
+            ctx.fillStyle = color;
+            ctx.textAlign = 'left';
+            // Décale légèrement pour éviter chevauchement
+            const offsetY = (i % 2 === 0) ? -6 : 8;
+            ctx.fillText(nom, Math.min(lastX + 6, W - PAD_RIGHT - ctx.measureText(nom).width), lastY + offsetY);
+        }
     });
+
+    // Légende en bas
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    const legendY = 200 - 10;
+    let legendX = PAD_LEFT;
+    for (let i = 0; i < nb; i++) {
+        ctx.fillStyle = COULEURS[i];
+        ctx.fillRect(legendX, legendY - 8, 10, 8);
+        ctx.fillStyle = '#3c3c43';
+        const nom = state.joueurs[i]?.nom || `J${i+1}`;
+        ctx.fillText(nom, legendX + 13, legendY);
+        legendX += ctx.measureText(nom).width + 26;
+    }
+
+    // Stats par joueur
+    const statsDiv = document.getElementById('stats-joueurs');
+    const sorted = [...state.joueurs].slice(0, nb).sort((a, b) => b.score - a.score);
+    statsDiv.innerHTML = sorted.map((j, rank) => {
+        const pct = j.nbPreneur > 0 ? Math.round((j.nbGagnes / j.nbPreneur) * 100) : 0;
+        const medals = ['🥇','🥈','🥉'];
+        return `<div class="stat-row" style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+                <div class="stat-name">${medals[rank] || ''} ${j.nom}</div>
+                <div class="stat-details">${j.nbPreneur} prise(s) • ${j.nbGagnes} gagnée(s) • ${pct}% réussite</div>
+            </div>
+            <div class="stat-score" style="color:${j.score>=0?'#34c759':'#ff3b30'}">${j.score>=0?'+':''}${j.score.toFixed(1)}</div>
+        </div>`;
+    }).join('');
 }
 
 // =====================
-// OPTIONS / RESET
+// OPTIONS
 // =====================
 document.addEventListener('change', e => {
     if (e.target.id === 'opt-pousse') state.options.pousse = e.target.checked;
@@ -1207,29 +1271,21 @@ document.addEventListener('change', e => {
     sauvegarderPartie();
 });
 
-function confirmReset() {
-    document.getElementById('modal-reset').classList.add('active');
-}
-function closeModal() {
-    document.getElementById('modal-reset').classList.remove('active');
-}
+// =====================
+// RESET
+// =====================
+function confirmReset() { document.getElementById('modal-reset').classList.add('active'); }
+function closeModal() { document.getElementById('modal-reset').classList.remove('active'); }
+
 function resetPartie() {
     state.joueurs.forEach(j => { j.score = 0; j.nbPreneur = 0; j.nbGagnes = 0; });
     state.historique = [];
     state.indexDonneur = 0;
-    localStorage.removeItem('tarot_partie');
     closeModal();
+    sauvegarderPartie();
+    reinitManche();
     updateUI();
-    showTab('jeu');
 }
 </script>
-
-<!-- Service Worker -->
-<script>
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-}
-</script>
-
 </body>
 </html>
