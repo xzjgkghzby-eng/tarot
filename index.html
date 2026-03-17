@@ -757,34 +757,89 @@ function tValider() {
   const pai  = parseInt(document.getElementById('tr-partenaire').value);
   if (isNaN(pts)) return;
 
-  const s = T_SEUILS[nb], diff = pts - s, gagne = diff >= 0;
-  const pousse = document.getElementById('tr-opt-pousse')?.checked ? 1.5 : 1;
-  const vBase  = (25 + Math.abs(diff)) * co;
-  const vChelem= [0, 400, 200, -200][ch] || 0;
-  const gains  = Array(TS.n).fill(0);
+  const s = T_SEUILS[nb];
+  const diff = Math.abs(pts - s);
+  const gagne = pts >= s;
+  
+  // 1. Base + Marge (Scénarios 1, 2, 3, 4, 5, 6, 8)
+  let baseDef = 25 + diff;
 
-  const att  = TS.n === 5 && pai !== pi ? [pi, pai] : [pi];
-  const def  = Array.from({length:TS.n}, (_,i) => i).filter(i => !att.includes(i));
-  const signA = gagne ? 1 : -1;
-  const valDef = -(vBase + vChelem) * signA;
-  const valAtt = -valDef * def.length / att.length;
-
-  att.forEach(a => gains[a] += valAtt);
-  def.forEach(d2 => gains[d2] += valDef);
-
-  function distrib(j, v) {
-    const others = Array.from({length:TS.n}, (_,i) => i).filter(i => i !== j);
-    gains[j] += v * others.length; others.forEach(o => gains[o] -= v);
+  // 2. Petit au bout (Scénarios 7, 10)
+  // Le Petit au bout s'ajoute avant la multiplication par le contrat
+  if (pab >= 0) {
+    const isAttaque = (pab === pi || (TS.n === 5 && pab === pai));
+    // S'il est remporté par l'équipe qui gagne la donne, on ajoute 10 pts. Sinon on les déduit.
+    if ((gagne && isAttaque) || (!gagne && !isAttaque)) {
+      baseDef += 10; 
+    } else {
+      baseDef -= 10;
+    }
   }
-  if (pab >= 0) distrib(pab, 10 * co);
-  const pgV = [0, 20, 30, 40];
-  for (let i = 0; i < TS.n; i++) { if (tPoignees[i] > 0) distrib(i, pgV[tPoignees[i]]); if (tMiseres[i]) distrib(i, 10); }
-  for (let i = 0; i < TS.n; i++) gains[i] = Math.round(gains[i] * pousse * 10) / 10;
 
-  TS.joueurs.forEach((j, i) => { j.score += gains[i]; if (i === pi) { j.nbP++; if (gagne) j.nbG++; } });
-  const cN = ['','Petite','Garde','','Sans','','Contre'];
-  TS.hist.unshift({ nom:`Donne ${TS.hist.length+1} • ${TS.joueurs[pi].nom} ${gagne?'✅':'❌'} ${cN[co]}`, scores:gains.slice(0,TS.n) });
+  // 3. Multiplication par le contrat
+  let pointsDef = baseDef * co;
+
+  // Le signe des points du défenseur (Négatif si l'attaque gagne, Positif si l'attaque chute)
+  pointsDef = gagne ? -pointsDef : pointsDef;
+
+  // 4. Poignée (Scénario 9) et Chelem
+  // Ces primes ne sont pas multipliées par le contrat et s'ajoutent à la fin
+  const vChelem = [0, 400, 200, -200][ch] || 0;
+  pointsDef += (gagne ? -vChelem : vChelem);
+
+  const gains = Array(TS.n).fill(0);
+  const att = TS.n === 5 && pai !== pi ? [pi, pai] : [pi];
+  const def = Array.from({length: TS.n}, (_, i) => i).filter(i => !att.includes(i));
+  
+  // 5. Distribution des points de base aux défenseurs
+  def.forEach(d => gains[d] += pointsDef);
+
+  // 6. Calcul pour l'attaque (Preneur + Partenaire éventuel)
+  const totalDef = -pointsDef * def.length;
+  if (att.length === 2) {
+    gains[att[0]] += totalDef * 2 / 3; // Preneur : 2/3
+    gains[att[1]] += totalDef * 1 / 3; // Partenaire : 1/3
+  } else {
+    gains[att[0]] += totalDef; // Preneur seul : 100%
+  }
+
+  // 7. Primes individuelles de Poignée (la poignée est payée par les autres joueurs à celui qui la montre)
+  const pgV = [0, 20, 30, 40];
+  for (let i = 0; i < TS.n; i++) {
+    if (tPoignees[i] > 0) {
+      const valPoignee = pgV[tPoignees[i]];
+      const others = Array.from({length: TS.n}, (_, j) => j).filter(j => j !== i);
+      gains[i] += valPoignee * others.length;
+      others.forEach(o => gains[o] -= valPoignee);
+    }
+    // Misères (10 pts)
+    if (tMiseres[i]) {
+      const others = Array.from({length: TS.n}, (_, j) => j).filter(j => j !== i);
+      gains[i] += 10 * others.length;
+      others.forEach(o => gains[o] -= 10);
+    }
+  }
+
+  // 8. Option "La Pousse" (×1.5) et sauvegarde
+  const pousse = document.getElementById('tr-opt-pousse')?.checked ? 1.5 : 1;
+  for (let i = 0; i < TS.n; i++) {
+    gains[i] = Math.round(gains[i] * pousse * 10) / 10;
+    TS.joueurs[i].score += gains[i];
+    if (i === pi) { 
+      TS.joueurs[i].nbP++; 
+      if (gagne) TS.joueurs[i].nbG++; 
+    }
+  }
+
+  const cN = ['', 'Petite', 'Garde', '', 'Sans', '', 'Contre'];
+  TS.hist.unshift({ 
+    nom: `Donne ${TS.hist.length + 1} • ${TS.joueurs[pi].nom} ${gagne ? 'gagné ✅' : 'chuté ❌'} ${cN[co]}`, 
+    scores: gains.slice(0, TS.n) 
+  });
+
   tSave(); tInitUI(); tRefreshClass();
+}
+
 }
 
 function tRefreshClass() {
